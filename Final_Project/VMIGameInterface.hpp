@@ -71,7 +71,6 @@ namespace iml{
         vmi::PolygonShape* render(Krec::Simplex simplex){
             Krec::Projection P = Krec::Projection(0.1f,100.0f);
             simplex = P*simplex;
-            std::cout << simplex;
             vmi::PolygonShape* shape = new vmi::PolygonShape();
             shape->addPoint(vmi::Vector2d(simplex[1][1],simplex[1][2]));
             shape->addPoint(vmi::Vector2d(simplex[2][1],simplex[2][2]));
@@ -181,10 +180,22 @@ namespace iml{
             return complex;
         }
         void render(Screen* screen, double _scale = 1.0){
-            for(int i = 1; i<= this->size(); ++i){
-                (*this)[i].render(screen, _scale);
+            for(int i = 0; i< this->size(); ++i){
+                this->complex.at(i).render(screen, _scale);
             }
         }
+    };
+
+    class Cube : public iml::Complex{
+
+        public:
+        Cube(){
+            this->push_back(Simplex(0,e1,e1+e2));
+            this->push_back(Simplex(0,e2,e1+e2));
+            this->push_back(Simplex(e2,e1+e2,e2+e3));
+            this->push_back(Simplex(e2,e1+e2,e2+e3));
+        }
+
     };
 
 }; // namespace Interface
