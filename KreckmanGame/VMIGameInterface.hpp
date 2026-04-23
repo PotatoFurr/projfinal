@@ -67,6 +67,7 @@ namespace iml{
         private:
         Screen* screen;
         friend class Simplex;
+        friend class Complex;
 
         vmi::PolygonShape* render(Krec::Simplex simplex){
             Krec::Projection P = Krec::Projection(0.1f,100.0f);
@@ -124,6 +125,10 @@ namespace iml{
             img = new Renderable(*dynamic_cast<Krec::Simplex*>(this),screen);
             img->scale = _scale;
         }
+        
+        Renderable* getRend(){
+            return img;
+        }
 
 
     };
@@ -134,6 +139,7 @@ namespace iml{
         std::vector<iml::Simplex> complex;
 
         public:
+        friend class iml::Simplex;
         Complex(): complex(std::vector<iml::Simplex>()){
             //intentionaly left balnk
         }
@@ -179,7 +185,8 @@ namespace iml{
             }
             return complex;
         }
-        void render(Screen* screen, double _scale = 1.0){
+        void render(Screen* screen, std::vector<vmi::Color> colors = vmi::Color::White, double _scale = 1.0){
+            int len = colors.size();
             for(int i = 0; i< this->size(); ++i){
                 this->complex.at(i).render(screen, _scale);
             }
