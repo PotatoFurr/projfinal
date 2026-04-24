@@ -1,12 +1,11 @@
+#pragma once
+
 #include "3dEngine.hpp"
 
 #include "lane.hpp"
 #include <Keyboard.hpp>
 #include "LANE.h"
-#include "Movement.hpp"
-#include "Vector3d.hpp"
-#include "VertexSets.hpp"
-#include "VMIGameInterface.hpp"
+
 
 using namespace Krec;
 using namespace vmi;
