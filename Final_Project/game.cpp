@@ -8,6 +8,13 @@ View view = View(800, 800);
 int main(){
     view.updateProjection();
 
+    //here for future
+    /*
+    
+        nplayer = new Runner(vmi::Key::Up, vmi::Key::Down)
+    
+    */
+
     Simplex simplex = Simplex(
         O,
         e1,
