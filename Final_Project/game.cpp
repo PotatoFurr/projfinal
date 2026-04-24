@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "3dEngine.hpp"
+#include "runner.hpp"
+#include "LANE.h"
 
 Game game = Game(800,800);
 View view = View(800, 800);
@@ -8,12 +10,8 @@ View view = View(800, 800);
 int main(){
     view.updateProjection();
 
-    //here for future
-    /*
+     Runner(Key::A, Key::D);
     
-        nplayer = new Runner(vmi::Key::A, vmi::Key::D)
-    
-    */
 
     Simplex simplex = Simplex(
         O,

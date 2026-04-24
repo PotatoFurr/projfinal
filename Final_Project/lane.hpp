@@ -14,7 +14,7 @@ using namespace Krec;
 class Lane
 {
     public:
-        Lane(lan slane) : slane(slane) //for player, will make slane two
+        Lane(lan slane, Runner* player) : slane(slane) //for player, will make slane two
         {
 
             
@@ -46,6 +46,7 @@ class Lane
         {
 
             slane = inp;
+            player->Vector3d(slane,400,10);
             return slane;
 
         };
@@ -53,5 +54,6 @@ class Lane
     private:
 
         lan slane;
+        Runner* player;
 
 };

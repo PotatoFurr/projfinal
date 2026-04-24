@@ -1,23 +1,15 @@
 #include "3dEngine.hpp"
+
+#include "lane.hpp"
+#include <Keyboard.hpp>
+#include "LANE.h"
 #include "Movement.hpp"
 #include "Vector3d.hpp"
 #include "VertexSets.hpp"
 #include "VMIGameInterface.hpp"
-#include "lane.hpp"
-#include <Keyboard.hpp>
-#include "LANE.h"
 
 using namespace Krec;
 using namespace vmi;
-
-enum lan
-{
-
-    L1 = 1,
-    L2 = 2,
-    L3 = 3
-
-};
 
 class Runner : public Complex
 {
@@ -99,7 +91,6 @@ class Runner : public Complex
 
         bool alive;
         float score;
-        Runner* player;
 
         Key A;
         Key D;
