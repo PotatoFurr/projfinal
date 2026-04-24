@@ -74,12 +74,21 @@ class Vector3D_h{
         return os;
     }
 
+    float operator[](int index){
+        switch(index){
+            case 0: return x;
+            case 1: return y;
+            case 2: return z;
+            default: throw std::runtime_error("Out of Bounds Indexing");
+        }
+    }
+
 
 };
-#define e1 Vector3D_h(1,0,0,0)
-#define e2 Vector3D_h(0,1,0,0)
-#define e3 Vector3D_h(0,0,1,0)
-#define O Vector3D_h(0,0,0,0)
+#define e1 Vector3D_h(1,0,0,1)
+#define e2 Vector3D_h(0,1,0,1)
+#define e3 Vector3D_h(0,0,1,1)
+#define O Vector3D_h(0,0,0,1)
 
 class Matrix_h{
     private:
@@ -102,15 +111,13 @@ class Matrix_h{
     friend Matrix_h operator*(Matrix_h M1, Matrix_h& M2){
         return Matrix_h();
     }
-    friend Vector3D_h operator*(Matrix_h M, Vector3D_h& V){
-        Vector3D_h ans(
+    friend Vector3D_h operator*(Matrix_h M, Vector3D_h V){
+        return Vector3D_h(
             M.r1*V,
             M.r2*V,
             M.r3*V,
             M.r4*V
         );
-        V = ans;
-        return V;
     }
     friend std::ostream& operator<<(std::ostream& os, Matrix_h M){
         os << M.r1 << std::endl;
@@ -129,10 +136,19 @@ class Translation : public Matrix_h{
     }
     public:
     Translation(Vector3D_h V): Matrix_h(
-        Vector3D_h(0,0,0,V.x),
-        Vector3D_h(0,0,0,V.y),
-        Vector3D_h(0,0,0,V.z),
-        Vector3D_h(0,0,0,1))
+        Vector3D_h(0.0f,0.0f,0.0f,V[0]),
+        Vector3D_h(0.0f,0.0f,0.0f,V[1]),
+        Vector3D_h(0.0f,0.0f,0.0f,V[2]),
+        Vector3D_h(0.0f,0.0f,0.0f,1.0f)){
+            //intetionly left blank
+        }
+    Translation(float x, float y, float z): Matrix_h(
+        Vector3D_h(0.0f,0.0f,0.0f,x),
+        Vector3D_h(0.0f,0.0f,0.0f,y),
+        Vector3D_h(0.0f,0.0f,0.0f,z),
+        Vector3D_h(0.0f,0.0f,0.0f,1)){
+            //intetionly left blank
+        }
 
 };
 
@@ -206,11 +222,13 @@ class Simplex{
         //intetionly left blank
     }
 
-    friend Simplex& operator*(Matrix_h M, Simplex& simplex){
-        M*simplex.V1;
-        M*simplex.V2;
-        M*simplex.V3;
-        return simplex;
+    friend Simplex operator*(Matrix_h M, Simplex simplex){
+        return Simplex(
+        M*simplex.V1,
+        M*simplex.V2,
+        M*simplex.V3,
+        simplex.color);
+        
     }
 
     void render(View view, float _scale){
@@ -223,26 +241,22 @@ class Simplex{
         img->scale =_scale;
         vmi::PolygonShape* shape = new vmi::PolygonShape();
         //projects the matrix down to 2d
-        Vector3D_h V1 = this->V1;
-        view.projectionMatrix*V1;
-
-        Vector3D_h V2 = this->V2;
-        view.projectionMatrix*V2;
-
-        Vector3D_h V3 = this->V3;
-        view.projectionMatrix*V3;
+        Simplex S = view.projectionMatrix*(*this);
 
         //creates the shape for vmi engine to render 
-            shape->addPoint({V1.x,V1.y});
-            shape->addPoint({V2.x,V2.y});
-            shape->addPoint({V3.x,V3.y});
+            shape->addPoint({S.V1.x,S.V1.y});
+            shape->addPoint({S.V2.x,S.V2.y});
+            shape->addPoint({S.V3.x,S.V3.y});
             shape->setFill(color);
 
         //Sets the renderables shape
         img->setShape(shape);
     }
 
-
+    friend std::ostream& operator<<(std::ostream& os, Simplex S){
+        os << "{" <<  S.V1 << ", " << S.V2 << ", " << S.V3 << "}";
+        return os;
+    }
 
 
 };

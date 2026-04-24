@@ -21,6 +21,8 @@ int main(){
         e2,
         vmi::Color::Magenta
     );
+    Matrix_h T = Translation(.01f,0.0f,0.0f);
+    simplex = T*simplex;
     simplex.render(view, 100.0f);
 
     game.playGame();
