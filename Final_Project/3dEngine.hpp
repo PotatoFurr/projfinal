@@ -1,9 +1,12 @@
+//Standrd Library
+#include <vector>
+#include <cmath>
+//VMI Game Engine
 #include <Color.hpp>
 #include <Thing.hpp>
 #include <PolygonShape.hpp>
 #include <Vector2d.hpp>
 #include <Game.hpp>
-
 class Game : public vmi::Game{
     public:
         Game(int _width, int _height) : vmi::Game("3D Game", _width, _height){
@@ -53,7 +56,7 @@ class Vector3D_h{
     /// @param V1,V2 
     //////
     friend float operator*(Vector3D_h V1, Vector3D_h V2){
-        return V1.x*V2.x + V1.y*V2.y + V1.z*V2.z + V1.w+V2.w;
+        return (V1.x*V2.x) + (V1.y*V2.y) + (V1.z*V2.z) + (V1.w*V2.w);
     }
     
     //////
@@ -83,6 +86,12 @@ class Vector3D_h{
         }
     }
 
+    friend Vector3D_h operator+(Vector3D_h V1, Vector3D_h V2){
+        V1.x = V1.x + V2.x;
+        V1.y = V1.y + V2.y;
+        V1.z = V1.z + V2.z;
+        return V1;
+    }
 
 };
 #define e1 Vector3D_h(1,0,0,1)
@@ -129,6 +138,18 @@ class Matrix_h{
 
 };
 
+class Projection : public Matrix_h{
+    public:
+    /// @param FOV the horizontal angle of view
+    Projection(float n, float f, float FOV): Matrix_h(
+        Vector3D_h(1,0,0,0),
+        Vector3D_h(0,1,0,0),
+        Vector3D_h(0,0,-f/(f-n), -1),
+        Vector3D_h(0,0,-f*n/(f-n),0)
+    ){
+        //intentionaly left blank
+    }
+};
 class Translation : public Matrix_h{
     private:
     Translation(){
@@ -136,41 +157,76 @@ class Translation : public Matrix_h{
     }
     public:
     Translation(Vector3D_h V): Matrix_h(
-        Vector3D_h(0.0f,0.0f,0.0f,V[0]),
-        Vector3D_h(0.0f,0.0f,0.0f,V[1]),
-        Vector3D_h(0.0f,0.0f,0.0f,V[2]),
+        Vector3D_h(1.0f,0.0f,0.0f,V[0]),
+        Vector3D_h(0.0f,1.0f,0.0f,V[1]),
+        Vector3D_h(0.0f,0.0f,1.0f,V[2]),
         Vector3D_h(0.0f,0.0f,0.0f,1.0f)){
             //intetionly left blank
         }
     Translation(float x, float y, float z): Matrix_h(
-        Vector3D_h(0.0f,0.0f,0.0f,x),
-        Vector3D_h(0.0f,0.0f,0.0f,y),
-        Vector3D_h(0.0f,0.0f,0.0f,z),
+        Vector3D_h(1.0f,0.0f,0.0f,x),
+        Vector3D_h(0.0f,1.0f,0.0f,y),
+        Vector3D_h(0.0f,0.0f,1.0f,z),
         Vector3D_h(0.0f,0.0f,0.0f,1)){
             //intetionly left blank
         }
 
 };
+class Rotation_x : public Matrix_h{
+    public:
+    //HR: Got the principle rotation matricies from wikipidia
+    Rotation_x(float angle): Matrix_h(Vector3D_h(1.0f,0.0f,0.0f,0.0f),
+    Vector3D_h(0.0f,cos(angle), -sin(angle), 0.0f),
+    Vector3D_h(0.0f,sin(angle), cos(angle), 0.0f),
+    Vector3D_h(0.0f,0.0f,0.0f,1.0f)){
+        //intetionly left blank
+    }
 
+};
+class Rotation_y : public Matrix_h{
+    public:
+    //HR: Got the principle rotation matricies from wikipidia
+    Rotation_y(float angle): Matrix_h(
+    Vector3D_h(cos(angle),0.0f, -sin(angle), 0.0f),
+    Vector3D_h(0.0f,1,0.0f,0.0f),
+    Vector3D_h(-sin(angle), 0.0f, cos(angle), 0.0f),
+    Vector3D_h(0.0f,0.0f,0.0f,1.0f)){
+        //intetionly left blank
+    }
+
+};
+class Rotation_z : public Matrix_h{
+    public:
+    //HR: Got the principle rotation matricies from wikipidia
+    Rotation_z(float angle): Matrix_h(
+    Vector3D_h(cos(angle), -sin(angle), 0.0f, 0.0f),
+    Vector3D_h(sin(angle), cos(angle),0.0f, 0.0f),
+    Vector3D_h(0.0f,0.0f,1.0f,0.0f),
+    Vector3D_h(0.0f,0.0f,0.0f,1.0f)){
+        //intetionly left blank
+    }
+
+};
 class View{
     private:
     int width; /// window width
     int height; /// window height
     Matrix_h cameraMatrix; // holds the maipulation of the world so new objects can have it applied and tracked
+    float FOV = 120;
     Matrix_h projectionMatrix; /// changex with the with and height
     friend class Renderable;
     friend class Simplex;
 
     public:
     void updateProjection(){
-        projectionMatrix = Matrix_h(
-            Vector3D_h(1,0,0,0),
-            Vector3D_h(0,1,0,0),
-            Vector3D_h(0,0,1,0),
-            Vector3D_h(0,0,1,0)
-        );
-
+        projectionMatrix = Projection(1.0f, 100.0f,100.0f);
     }
+     void update(int newHeight, int newWidth, float newFOV){
+        height = newHeight;
+        width = newWidth;
+        FOV = newFOV;
+        this->updateProjection();
+     }
 
     View(int _w, int _h): width(_w), height(_h){
     //intentionly left blank
@@ -184,7 +240,6 @@ class View{
 
 
 };
-
 class Renderable : public vmi::Thing{
     public:
     friend class Simplex;
@@ -258,5 +313,73 @@ class Simplex{
         return os;
     }
 
+
+};
+
+class Complex{
+    private:
+    std::vector<Simplex> complex;
+    
+    std::optional<Complex> operator*(Matrix_h M){
+        std::optional<Complex> ans;
+        if(typeid(M) != typeid(Projection)){
+            for(auto it = begin(complex); it != end(complex); ++it){
+                *it = M*(*it);
+            }
+            return ans;
+        }
+        assert(typeid(M) == typeid(Projection));
+        for(auto it = begin(complex); it != end(complex); ++it){
+            ans->push_back(M*(*it));
+        }
+        return ans;
+
+    }
+    public:
+    void push_back(Simplex simplex){
+        complex.push_back(simplex);
+    }
+    //HR: std::optional from Stack overflow
+
+    friend std::optional<Complex> operator*(Matrix_h M, Complex &complex){
+        return complex*M;
+    }
+    void render(View view, float _scale){
+        //hr stack overflow
+        for(auto it = begin(complex); it != end(complex); ++it){
+            it->render(view, _scale);
+        }
+    }
+    friend std::ostream& operator<<(std::ostream& os, Complex complex){
+        for(auto it = begin(complex.complex); it != end(complex.complex); ++it){
+            os << *it << std::endl;
+        }
+        return os;
+    }
+
+};
+
+class Cube : public Complex{
+    public:
+        Cube(){
+            //Back
+            this->push_back(Simplex(e3, e1+e3, e1+e2+e3, vmi::Color::Magenta));
+            this->push_back(Simplex(e3, e2+e3, e1+e2+e3, vmi::Color::Magenta));
+            //Left Side
+            this->push_back(Simplex(O, e3, e2+e3, vmi::Color::Yellow));
+            this->push_back(Simplex(O, e2, e2+e3, vmi::Color::Yellow));
+            //Right Side
+            this->push_back(Simplex(e1, e1+e3, e1+e2+e3, vmi::Color::Yellow));
+            this->push_back(Simplex(e1, e1+e2, e1+e2+e3, vmi::Color::Yellow));
+            //Top
+            this->push_back(Simplex(e2, e1+e2, e1+e2+e3, vmi::Color::White));
+            this->push_back(Simplex(e2, e1+e3, e1+e2+e3, vmi::Color::White));
+            //Bottom
+            this->push_back(Simplex(O, e1, e1+e3, vmi::Color::White));
+            this->push_back(Simplex(O, e3, e1+e3, vmi::Color::White));
+            //Front
+            this->push_back(Simplex(O, e1, e1+e2, vmi::Color::Magenta));
+            this->push_back(Simplex(O, e2, e1+e2, vmi::Color::Magenta));
+        }
 
 };
