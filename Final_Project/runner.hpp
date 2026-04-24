@@ -21,7 +21,7 @@ enum lan
 class Runner : public Complex
 {
     public:
-        Runner(const Key upKey, const Key downKey) : Vector3d(), Lane(2), score(0.0), upKey(upKey), downKey(downKey)/*fix this: add constructor to lane and make it so number given is what lane player is put in. */ 
+        Runner(const Key A, const Key D) : Vector3d(), Lane(2), score(0.0), A(A), D(D)/*fix this: add constructor to lane and make it so number given is what lane player is put in. */ 
         {
 
             //construct complex of runner, assign x,y,z value
@@ -34,7 +34,7 @@ class Runner : public Complex
             ((0,0,5), (0,5,5), (5,5,5)), ((0,0,5), (5,0,5), (5,5,5)),
             ((0,0,0), (0,5,0), (5,5,0)), ((0,0,0), (0,5,5), (5,5,0)),
             }
-            playermodel = new Complex(comlpxmodel)
+            Complex(comlpxmodel);
 
         };
 
@@ -44,6 +44,13 @@ class Runner : public Complex
             delete player;
             delete comlpxmodel;
             
+
+        };
+
+        const Runner* getPlayer() const 
+        {
+
+            return player;
 
         };
 
@@ -63,14 +70,23 @@ class Runner : public Complex
 
         
 
-        void move(double dt)
+        void move()
         {
-
+            //moving left
             if (((Game::isKeyPressed(Key::A)) || (Game::isKeyPressed(Key::A))) && (player->GetLane() == L2)) {
                 player->ChangeLane(L1);
             };
 
             if (((Game::isKeyPressed(Key::A)) || (Game::isKeyPressed(Key::A))) && (player->GetLane() == L3)) {
+                player->ChangeLane(L2);
+            };
+
+            //moving right
+            if (((Game::isKeyPressed(Key::D)) || (Game::isKeyPressed(Key::D))) && (player->GetLane() == L1)) {
+                player->ChangeLane(L2);
+            };
+
+            if (((Game::isKeyPressed(Key::D)) || (Game::isKeyPressed(Key::D))) && (player->GetLane() == L2)) {
                 player->ChangeLane(L3);
             };
     
@@ -82,11 +98,10 @@ class Runner : public Complex
 
         bool alive;
         float score;
-        Runner player;
-        Complex* playermodel;
+        Runner* player;
 
-        Key upKey;
-        Key downKey;
+        Key A;
+        Key D;
 
 
         float IncScore(double dt) const

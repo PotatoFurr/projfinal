@@ -44,14 +44,15 @@ class Lane
         lan GetLane()
         {
 
-            return curlane;
+            return slane;
 
         };
 
         lan ChangeLane(lan inp)
         {
 
-            return inp;
+            slane = inp;
+            return slane;
 
         };
 

@@ -11,7 +11,7 @@ int main(){
     //here for future
     /*
     
-        nplayer = new Runner(vmi::Key::Up, vmi::Key::Down)
+        nplayer = new Runner(vmi::Key::A, vmi::Key::D)
     
     */
 
