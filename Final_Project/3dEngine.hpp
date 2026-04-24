@@ -3,6 +3,7 @@
 #include <PolygonShape.hpp>
 #include <Vector2d.hpp>
 #include <Game.hpp>
+#include <vector>
 
 class Game : public vmi::Game{
     public:
@@ -53,7 +54,7 @@ class Vector3D_h{
     /// @param V1,V2 
     //////
     friend float operator*(Vector3D_h V1, Vector3D_h V2){
-        return V1.x*V2.x + V1.y*V2.y + V1.z*V2.z + V1.w+V2.w;
+        return (V1.x*V2.x) + (V1.y*V2.y) + (V1.z*V2.z) + (V1.w*V2.w);
     }
     
     //////
@@ -129,6 +130,19 @@ class Matrix_h{
 
 };
 
+class Projection : public Matrix_h{
+    public:
+    /// @param FOV the horizontal angle of view
+    Projection(float n, float f, float FOV): Matrix_h(
+        Vector3D_h(1,0,0,0),
+        Vector3D_h(0,1,0,0),
+        Vector3D_h(0,0,-f/(f-n), -1),
+        Vector3D_h(0,0,-f*n/(f-n),0)
+    ){
+        //intentionaly left blank
+    }
+};
+
 class Translation : public Matrix_h{
     private:
     Translation(){
@@ -136,16 +150,16 @@ class Translation : public Matrix_h{
     }
     public:
     Translation(Vector3D_h V): Matrix_h(
-        Vector3D_h(0.0f,0.0f,0.0f,V[0]),
-        Vector3D_h(0.0f,0.0f,0.0f,V[1]),
-        Vector3D_h(0.0f,0.0f,0.0f,V[2]),
+        Vector3D_h(1.0f,0.0f,0.0f,V[0]),
+        Vector3D_h(0.0f,1.0f,0.0f,V[1]),
+        Vector3D_h(0.0f,0.0f,1.0f,V[2]),
         Vector3D_h(0.0f,0.0f,0.0f,1.0f)){
             //intetionly left blank
         }
     Translation(float x, float y, float z): Matrix_h(
-        Vector3D_h(0.0f,0.0f,0.0f,x),
-        Vector3D_h(0.0f,0.0f,0.0f,y),
-        Vector3D_h(0.0f,0.0f,0.0f,z),
+        Vector3D_h(1.0f,0.0f,0.0f,x),
+        Vector3D_h(0.0f,1.0f,0.0f,y),
+        Vector3D_h(0.0f,0.0f,1.0f,z),
         Vector3D_h(0.0f,0.0f,0.0f,1)){
             //intetionly left blank
         }
@@ -157,18 +171,14 @@ class View{
     int width; /// window width
     int height; /// window height
     Matrix_h cameraMatrix; // holds the maipulation of the world so new objects can have it applied and tracked
+    float FOV = 120;
     Matrix_h projectionMatrix; /// changex with the with and height
     friend class Renderable;
     friend class Simplex;
 
     public:
     void updateProjection(){
-        projectionMatrix = Matrix_h(
-            Vector3D_h(1,0,0,0),
-            Vector3D_h(0,1,0,0),
-            Vector3D_h(0,0,1,0),
-            Vector3D_h(0,0,1,0)
-        );
+        projectionMatrix = Projection(1.0f, 100.0f,100.0f);
 
     }
 
@@ -258,5 +268,42 @@ class Simplex{
         return os;
     }
 
+
+};
+
+class Complex{
+    private:
+    std::vector<Simplex> complex;
+
+    public:
+    void push_back(Simplex simplex){
+        complex.push_back(simplex);
+    }
+    //HR: std::optional
+
+    std::optional<Complex> operator*(Matrix_h M){
+        std::optional<Complex> ans;
+        if(typeid(M) != typeid(Projection)){
+            for(auto it = begin(complex); it != end(complex); ++it){
+                *it = M*(*it);
+            }
+            return ans;
+        }
+        assert(typeid(M) == typeid(Projection));
+        for(auto it = begin(complex); it != end(complex); ++it){
+            ans->push_back(M*(*it));
+        }
+        return ans;
+
+    }
+    friend std::optional<Complex> operator*(Matrix_h M, Complex complex){
+        return complex*M;
+    }
+    void render(View view, float _scale){
+        //hr stack overflow
+        for(auto it = begin(complex); it != end(complex); ++it){
+            it->render(view, _scale);
+        }
+    }
 
 };
