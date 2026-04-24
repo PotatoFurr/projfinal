@@ -4,6 +4,7 @@
 #include "VertexSets.hpp"
 #include "VMIGameInterface.hpp"
 #include "lane.hpp"
+#include "LANE.h"
 
 using namespace Krec;
 

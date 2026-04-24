@@ -5,17 +5,11 @@
 #include "VMIGameInterface.hpp"
 #include "obstacles.hpp"
 #include "runner.hpp"
+#include "LANE.h"
 
 using namespace Krec;
 
-enum lan
-{
 
-    L1 = 1,
-    L2 = 2,
-    L3 = 3
-
-};
 
 class Lane
 {
