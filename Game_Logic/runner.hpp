@@ -7,13 +7,10 @@
 #include "LANE.h"
 
 
-using namespace Krec;
-using namespace vmi;
-
 class Runner : public Complex
 {
     public:
-        Runner(const Key A, const Key D) : Vector3d(), Lane(L2), score(0.0), A(A), D(D)/*fix this: add constructor to lane and make it so number given is what lane player is put in. */ 
+        Runner(const Key A, const Key D) : Vector3D_h(), Lane(L2), score(0.0), A(A), D(D)/*fix this: add constructor to lane and make it so number given is what lane player is put in. */ 
         {
 
             //construct complex of runner, assign x,y,z value

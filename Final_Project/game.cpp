@@ -1,8 +1,8 @@
 #include <iostream>
 
 #include "3dEngine.hpp"
-#include "runner.hpp"
-#include "LANE.h"
+// #include "runner.hpp"
+// #include "LANE.h"
 
 Game game = Game(800,800);
 View view = View(800, 800);
@@ -23,8 +23,6 @@ View view = View(800, 800);
 
 int main(){
     view.updateProjection();
-
-     Runner(Key::A, Key::D);
     
    Matrix_h T = Translation(1.00f,0.0f,0.0f);
    Matrix_h Ry = Rotation_y(M_PI/8);
