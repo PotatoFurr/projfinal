@@ -35,10 +35,9 @@ int main(){
     Rx*complex;
     Ry*complex;
     Rz*complex;
-    T*complex;
-
     complex.render(view, 100.0f);
-    std::cout << complex;
+    
+    game.setComplex(&complex);
     game.playGame();
     return 0;
 }

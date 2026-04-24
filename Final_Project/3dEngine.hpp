@@ -7,14 +7,6 @@
 #include <PolygonShape.hpp>
 #include <Vector2d.hpp>
 #include <Game.hpp>
-class Game : public vmi::Game{
-    public:
-        Game(int _width, int _height) : vmi::Game("3D Game", _width, _height){
-            //Intetionly left blank
-        }
-        void update(double dt){
-        }
-};
 class Vector3D_h{
     private:
     float x;
@@ -319,6 +311,7 @@ class Simplex{
 class Complex{
     private:
     std::vector<Simplex> complex;
+    friend class Game;
     
     std::optional<Complex> operator*(Matrix_h M){
         std::optional<Complex> ans;
@@ -382,4 +375,22 @@ class Cube : public Complex{
             this->push_back(Simplex(O, e2, e1+e2, vmi::Color::Magenta));
         }
 
+};
+
+class Game : public vmi::Game{
+    private:
+    Complex* complex;
+    public:
+        Game(int _width, int _height) : vmi::Game("3D Game", _width, _height){
+            //Intetionly left blank
+        }
+        void setComplex(Complex* _complex){
+            complex = _complex;
+        }
+        void update(double dt){
+            dt = (float) dt;
+            Matrix_h Ry = Rotation_y(M_PI * 100*dt);
+            Ry*(*complex);
+            std::cout << 100*dt << std::endl;
+        }
 };
