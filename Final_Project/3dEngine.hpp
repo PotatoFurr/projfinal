@@ -1,3 +1,4 @@
+#pragma once
 //Standrd Library
 #include <vector>
 #include <cmath>
