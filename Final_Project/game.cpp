@@ -28,14 +28,19 @@ int main(){
         nplayer = new Runner(vmi::Key::A, vmi::Key::D)
     
     */
-   Matrix_h T = Translation(.10f,0.0f,0.0f);
+   Matrix_h T = Translation(1.00f,0.0f,0.0f);
+   Matrix_h Ry = Rotation_y(M_PI/8);
+   Matrix_h Rx = Rotation_x(M_PI/8);
+   Matrix_h Rz = Rotation_z(M_PI/8);
 
-    Complex complex;
-    complex.push_back(Simplex(O ,e1 , e2, vmi::Color::White));
-    complex.push_back(Simplex(e1 ,e2 ,Vector3D_h(1,1,0,1) ,vmi::Color::Magenta));
+    Complex complex = Cube();
+    Rx*complex;
+    Ry*complex;
+    Rz*complex;
     T*complex;
-    complex.render(view, 100.0f);
 
+    complex.render(view, 100.0f);
+    std::cout << complex;
     game.playGame();
     return 0;
 }
