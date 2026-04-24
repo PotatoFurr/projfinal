@@ -19,7 +19,7 @@ int main(){
         O,
         e1,
         e2,
-        vmi::Color::White
+        vmi::Color::Magenta
     );
     simplex.render(view, 100.0f);
 

@@ -30,6 +30,7 @@ class Vector3D_h{
     }
 
     public:
+    friend class Vector3D_h;
     friend class Matrix_h;
     friend class Simplex;
     friend class Complex; 
@@ -118,6 +119,20 @@ class Matrix_h{
         os << M.r4 << std::endl;
         return os;
     }
+
+};
+
+class Translation : public Matrix_h{
+    private:
+    Translation(){
+        //intetionly left blank
+    }
+    public:
+    Translation(Vector3D_h V): Matrix_h(
+        Vector3D_h(0,0,0,V.x),
+        Vector3D_h(0,0,0,V.y),
+        Vector3D_h(0,0,0,V.z),
+        Vector3D_h(0,0,0,1))
 
 };
 
