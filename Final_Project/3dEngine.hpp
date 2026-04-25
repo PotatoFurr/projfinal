@@ -14,16 +14,8 @@ class Vector3D_h{
     float y;
     float z;
     float w;
+    friend class Matrix_h;
 
-    void perspective_division(){
-        if(this->w == 0){
-            return;
-        }
-        this->x = this->x / this->w;
-        this->y = this->y / this->y;
-        this->z = this->z / this->z;
-        this->w = 1.0f;
-    }
 
     public:
     friend class Vector3D_h;
@@ -63,6 +55,15 @@ class Vector3D_h{
             V1.x*V2.y-V1.y*V2.x,
             1
         );
+    }
+    void perspective_division(){
+        if(this->w == 0){
+            return;
+        }
+        this->x = this->x / this->w;
+        this->y = this->y / this->y;
+        this->z = this->z / this->z;
+        this->w = 1.0f;
     }
 
     friend std::ostream& operator<<(std::ostream& os, Vector3D_h vect){
@@ -114,12 +115,14 @@ class Matrix_h{
         return Matrix_h();
     }
     friend Vector3D_h operator*(Matrix_h M, Vector3D_h V){
-        return Vector3D_h(
+        Vector3D_h ans = Vector3D_h(
             M.r1*V,
             M.r2*V,
             M.r3*V,
             M.r4*V
         );
+        // ans.perspective_division();
+        return ans;
     }
     friend std::ostream& operator<<(std::ostream& os, Matrix_h M){
         os << M.r1 << std::endl;
@@ -269,40 +272,42 @@ class Simplex{
     Simplex(Vector3D_h _V1, Vector3D_h _V2, Vector3D_h _V3, vmi::Color _color): V1(_V1), V2(_V2), V3(_V3), color(_color), img(nullptr){
         //intetionly left blank
     }
+    Simplex(Vector3D_h _V1, Vector3D_h _V2, Vector3D_h _V3, vmi::Color _color, Renderable* _img): V1(_V1), V2(_V2), V3(_V3), color(_color), img(_img){
+        //intetionly left blank
+    }
 
     friend Simplex operator*(Matrix_h M, Simplex simplex){
         return Simplex(
         M*simplex.V1,
         M*simplex.V2,
         M*simplex.V3,
-        simplex.color);
+        simplex.color,
+    simplex.img);
         
     }
 
     void render(View view, float _scale){
-        if(img == nullptr){
+        if(img != nullptr){
+            img->die();
+        }
             img = new Renderable(view);
-        }
-        if(img->getShape() != nullptr){
-            delete img->getShape();
-        }
-        img->scale =_scale;
-        vmi::PolygonShape* shape = new vmi::PolygonShape();
-        //projects the matrix down to 2d
-        Simplex S = view.projectionMatrix*(*this);
+            img->scale =_scale;
+            vmi::PolygonShape* shape = new vmi::PolygonShape();
+            //projects the matrix down to 2d
+            view.projectionMatrix*(*this);
 
-        //creates the shape for vmi engine to render 
-            shape->addPoint({S.V1.x,S.V1.y});
-            shape->addPoint({S.V2.x,S.V2.y});
-            shape->addPoint({S.V3.x,S.V3.y});
-            shape->setFill(color);
+            //creates the shape for vmi engine to render 
+                shape->addPoint({V1.x,V1.y});
+                shape->addPoint({V2.x,V2.y});
+                shape->addPoint({V3.x,V3.y});
+                shape->setFill(color);
 
-        //Sets the renderables shape
-        img->setShape(shape);
+            //Sets the renderables shape
+            img->setShape(shape);
     }
 
     friend std::ostream& operator<<(std::ostream& os, Simplex S){
-        os << "{" <<  S.V1 << ", " << S.V2 << ", " << S.V3 << "}";
+        os << "{" <<  S.V1 << ", " << S.V2 << ", " << S.V3 << "}" << std::endl << "Renderable @ " << S.img;
         return os;
     }
 
@@ -340,8 +345,8 @@ class Complex{
     }
     void render(View view, float _scale){
         //hr stack overflow
-        for(auto it = begin(complex); it != end(complex); ++it){
-            it->render(view, _scale);
+        for(int it = 0; it < this->complex.size(); ++it){
+            this->complex.at(it).render(view, _scale);  
         }
     }
     friend std::ostream& operator<<(std::ostream& os, Complex complex){
@@ -380,18 +385,21 @@ class Cube : public Complex{
 
 class Game : public vmi::Game{
     private:
-    Complex* complex;
+    View& view; 
+    Complex& complex;
+    Complex& complex2;
     public:
-        Game(int _width, int _height) : vmi::Game("3D Game", _width, _height){
+        Game(int _width, int _height, Complex& _complex, Complex& _complex2, View& _view) : vmi::Game("3D Game", _width, _height), view(_view), complex(_complex), complex2(_complex2){
             //Intetionly left blank
-        }
-        void setComplex(Complex* _complex){
-            complex = _complex;
         }
         void update(double dt){
             dt = (float) dt;
-            Matrix_h Ry = Rotation_y(M_PI * 100*dt);
-            Ry*(*complex);
-            std::cout << 100*dt << std::endl;
+            Matrix_h Ry = Rotation_z(M_PI*dt/5);
+            Ry*complex;
+            complex.render(view, 100.0f);
+            Ry*complex2;
+            complex.render(view, 100.0f);
+
+            
         }
 };

@@ -4,7 +4,7 @@
 // #include "runner.hpp"
 // #include "LANE.h"
 
-Game game = Game(800,800);
+
 View view = View(800, 800);
 
 // void inline DebugProj(Simplex simplex){
@@ -24,18 +24,23 @@ View view = View(800, 800);
 int main(){
     view.updateProjection();
     
-   Matrix_h T = Translation(1.00f,0.0f,0.0f);
+   Matrix_h T = Translation(0.0f,0.0f,0.0f);
+   Matrix_h T2 = Translation(10.0f,0.0f,0.0f);
    Matrix_h Ry = Rotation_y(M_PI/8);
    Matrix_h Rx = Rotation_x(M_PI/8);
    Matrix_h Rz = Rotation_z(M_PI/8);
 
-    Complex complex = Cube();
+   Complex complex = Cube();
+   Complex complex2 = Cube();
     Rx*complex;
     Ry*complex;
     Rz*complex;
-    complex.render(view, 100.0f);
-    
-    game.setComplex(&complex);
+    T*complex;
+    Rx*complex2;
+    Ry*complex2;
+    Rz*complex2;
+    T2*complex2;
+    Game game = Game(800,800,complex, complex2, view);
     game.playGame();
     return 0;
 }
