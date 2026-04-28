@@ -308,9 +308,6 @@ class Simplex{
     }
 
     void render(View view, float _scale){
-        if(img != nullptr){
-            img->die();
-        }
             img = new Renderable(view);
             img->scale =_scale;
             vmi::PolygonShape* shape = new vmi::PolygonShape();
@@ -329,6 +326,7 @@ class Simplex{
                 shape->setFill(color);
 
             //Sets the renderables shape
+            // img->setZ(-(V1.z+V2.z+V3.z)/3);
             img->setShape(shape);
     }
 
@@ -405,25 +403,28 @@ class Complex{
 class Cube : public Complex{
     public:
         Cube(float _size){
-            // //Back
-            // this->push_back(Simplex(e3, e1+e3, e1+e2+e3, vmi::Color::Magenta));
-            // this->push_back(Simplex(e3, e2+e3, e1+e2+e3, vmi::Color::Magenta));
+            //Back
+            this->push_back(Simplex(_size*e3, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Magenta));
+            this->push_back(Simplex(_size*e3, _size*(e2+e3), _size*(e1+e2+e3), vmi::Color::Magenta));
             //Left Side
             this->push_back(Simplex(O, _size*e3, _size*(e2+e3), vmi::Color::Yellow));
             this->push_back(Simplex(O, _size*e2, _size*(e2+e3), vmi::Color::Yellow));
-            //Right Side
-            this->push_back(Simplex(_size*e1, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Yellow));
-            this->push_back(Simplex(_size*e1, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Yellow));
+            // //Right Side
+            // this->push_back(Simplex(_size*e1, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Yellow));
+            // this->push_back(Simplex(_size*e1, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Yellow));
             //Top
-            this->push_back(Simplex(_size*e2, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::White));
-            this->push_back(Simplex(_size*e2, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::White));
+            this->push_back(Simplex(_size*e2, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Blue));
+            this->push_back(Simplex(_size*e2, _size*(e2+e3), _size*(e1+e2+e3), vmi::Color::Blue));
             //Bottom
-            this->push_back(Simplex(O, _size*e1, _size*(e1+e3), vmi::Color::White));
-            this->push_back(Simplex(O, _size*e3, _size*(e1+e3), vmi::Color::White));
+            this->push_back(Simplex(O, _size*(e1), _size*(e1+e3), vmi::Color::Blue));
+            this->push_back(Simplex(O, _size*(e3), _size*(e1+e3), vmi::Color::Blue));
             //Front
             this->push_back(Simplex(O, _size*e1, _size*(e1+e2), vmi::Color::Magenta));
             this->push_back(Simplex(O, _size*e2, _size*(e1+e2), vmi::Color::Magenta));
-            this->size = _size;
+            // //Front
+            // this->push_back(Simplex(O, _size*e1, _size*(e1+e2), vmi::Color::Magenta));
+            // this->push_back(Simplex(O, _size*e2, _size*(e1+e2), vmi::Color::Magenta));
+            // this->size = _size;
         }
 
 };
@@ -440,7 +441,7 @@ class Player: public Cube{
 
     public:
     Player() : Cube(20){
-        Matrix_h T = Translation(0.0f,0.0f,20.0f);
+        Matrix_h T = Translation(0.0f,0.0f,100.0f);
         this->operator*(T);
     }
 
@@ -500,14 +501,19 @@ class Player: public Cube{
             Matrix_h R = Rotation_x(-dt);
             self->operator*(R);
         }
-
-
     }
-
-
 };
 
-
+class Floor: public Complex{
+    
+    public:
+    Floor(float _size){
+    Matrix_h T = Translation(0.0f,0.0f,100.0f);
+    this->push_back(Simplex(O, _size*(e1), _size*(e1+e3), vmi::Color::White));
+    this->push_back(Simplex(O, _size*(e3), _size*(e1+e3), vmi::Color::White));
+    this->operator*(T);
+    }
+};
 
 class Game : public vmi::Game{
     private:
@@ -521,6 +527,46 @@ class Game : public vmi::Game{
             Player::move(dt, 20.0f);
             Complex::renderAll(view);
         }
+            // Game loop
+    inline void playGame()
+    {
+        sf::Clock clock; // clock for measuring frame time
+
+        // game loop -- repeat until game ends or window is closed
+        while (!isOver() && window->isOpen())
+        {
+            while (const std::optional event = window->pollEvent())
+            {
+                // Window closed or escape key pressed: exit
+                if (event->is<sf::Event::Closed>())
+                    window->close();
+            }
+
+            // measure frame time
+            double dt = clock.restart().asSeconds();
+
+            // make sure this stays sane
+            dt = (dt > .04) ? .04 : dt;
+
+            // update the timers
+            vmi::Timer::updateTimers(dt);
+
+            // update any game specific features
+            update(dt);
+            
+            // remove all the dead things
+            vmi::Thing::removeDeadThings();
+            
+            // draw everyone
+            vmi::Thing::drawAll(*window);
+
+            // claers the frame buffer for all objects 
+            vmi::Thing::killAllThings();
+        }
+
+        // game is over, so delete the window
+        delete window;
+    }
 };
 
 }//namespace engine
