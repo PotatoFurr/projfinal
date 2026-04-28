@@ -471,12 +471,24 @@ class Player: public Cube{
             Matrix_h T = Translation(0.0f, 0.0f, -dt*speed);
             self->operator*(T);
         }
+        if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Left)){
+            int dx = 20;
+            Matrix_h R = Rotation_z(dt*dx/100);
+            self->operator*(R);
+        }
+        if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Right)){
+            int dx = 20;
+            Matrix_h R = Rotation_z(-dt*dx/100);
+            self->operator*(R);
+        }
 
 
     }
 
 
 };
+
+
 
 class Game : public vmi::Game{
     private:
@@ -489,8 +501,7 @@ class Game : public vmi::Game{
             dt = (float) dt;
             Player::move(dt, 20.0f);
             Complex::renderAll(view);
-
-            
         }
 };
+
 }//namespace engine

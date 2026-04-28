@@ -9,3 +9,5 @@ I am building a 3d render from scratch without a graphics API for a school proje
     prompt:
 how do you find the projection matrix given the width and hight of the render window, and how do you determine the near and far planes. Explain every part of the projection matrix from what the order of game cordinates are to screen cordeinates and more.
 
+    prompt:
+Explain full how the SFML library handles mouse interactions and scrolling  to track movemnts
