@@ -4,21 +4,8 @@
 
 
 using namespace engine;
-View view = View(800, 800, 100.0f);
+View view = View(800, 800, 90.0f);
 
-// void inline DebugProj(Simplex simplex){
-//     Matrix_h T = Translation(10.0f,0.0f,0.0f);
-//     Matrix_h P = Projection(1.0f,100.0f,0.0f);
-
-//     std::cout << "Translation: " << std::endl << T ;
-//     std::cout << "Projection: " << std::endl << P ;
-//     std::cout << "Simplex: " << simplex << std::endl;
-//     simplex = T*simplex;
-//     std::cout << "Translated: " << simplex << std::endl;
-//     simplex = P*simplex;
-//     std::cout << "Projected: " <<simplex << std::endl;
-
-// }
 
 Player * const Player::self = new Player();
 int main(){
@@ -32,7 +19,7 @@ int main(){
 
 //    Player::self->operator*(Rx);
 //    Player::self->operator*(Ry);
-   Player::self->operator*(T);
+//    Player::self->operator*(T);
 
     Complex::renderAll(view);
     Game game = Game(800,800, view);

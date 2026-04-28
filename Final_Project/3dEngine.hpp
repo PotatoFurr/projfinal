@@ -323,9 +323,9 @@ class Simplex{
                 int w = view.width;
                 int h = view.height;
 
-                shape->addPoint({(V1.x/V1.z + 1)/2*w,(1-V1.y/V1.z)/2*h});
-                shape->addPoint({(V2.x/V2.z + 1)/2*w,(1-V2.y/V2.z)/2*h});
-                shape->addPoint({(V3.x/V3.z + 1)/2*w,(1-V3.y/V3.z)/2*h});
+                shape->addPoint({(V1.x/V1.z )/2*w,(1/2-V1.y/V1.z)/2*h});
+                shape->addPoint({(V2.x/V2.z )/2*w,(1/2-V2.y/V2.z)/2*h});
+                shape->addPoint({(V3.x/V3.z )/2*w,(1/2-V3.y/V3.z)/2*h});
                 shape->setFill(color);
 
             //Sets the renderables shape
@@ -471,14 +471,33 @@ class Player: public Cube{
             Matrix_h T = Translation(0.0f, 0.0f, -dt*speed);
             self->operator*(T);
         }
-        if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Left)){
-            int dx = 20;
-            Matrix_h R = Rotation_z(dt*dx/100);
+
+        if(vmi::Game::isKeyPressed(vmi::Key::LAlt)){
+            if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Left)){
+                Matrix_h R = Rotation_z(dt);
+                self->operator*(R);
+            }
+            if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Right)){
+                Matrix_h R = Rotation_z(-dt);
+                self->operator*(R);
+            }
+        }
+
+        if(vmi::Game::isKeyPressed(vmi::Key::Left)){
+            Matrix_h R = Rotation_y(dt);
             self->operator*(R);
         }
-        if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Right)){
-            int dx = 20;
-            Matrix_h R = Rotation_z(-dt*dx/100);
+        if(vmi::Game::isKeyPressed(vmi::Key::Right)){
+            Matrix_h R = Rotation_y(-dt);
+            self->operator*(R);
+        }
+
+        if(vmi::Game::isKeyPressed(vmi::Key::Up)){
+            Matrix_h R = Rotation_x(dt);
+            self->operator*(R);
+        }
+        if(vmi::Game::isKeyPressed(vmi::Key::Down)){
+            Matrix_h R = Rotation_x(-dt);
             self->operator*(R);
         }
 
