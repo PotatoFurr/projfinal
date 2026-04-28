@@ -8,6 +8,10 @@
 #include <PolygonShape.hpp>
 #include <Vector2d.hpp>
 #include <Game.hpp>
+
+#define near 1
+#define far 100
+namespace engine{
 class Vector3D_h{
     private:
     float x;
@@ -94,11 +98,12 @@ class Vector3D_h{
 #define O Vector3D_h(0,0,0,1)
 
 class Matrix_h{
-    private:
+    public:
     Vector3D_h r1;
     Vector3D_h r2;
     Vector3D_h r3;
     Vector3D_h r4;
+    friend class Projection;
 
     public:
     Matrix_h(){
@@ -134,18 +139,7 @@ class Matrix_h{
 
 };
 
-class Projection : public Matrix_h{
-    public:
-    /// @param FOV the horizontal angle of view
-    Projection(float n, float f, float FOV): Matrix_h(
-        Vector3D_h(1,0,0,0),
-        Vector3D_h(0,1,0,0),
-        Vector3D_h(0,0,-f/(f-n), -1),
-        Vector3D_h(0,0,-f*n/(f-n),0)
-    ){
-        //intentionaly left blank
-    }
-};
+
 class Translation : public Matrix_h{
     private:
     Translation(){
@@ -212,10 +206,28 @@ class View{
     Matrix_h projectionMatrix; /// changex with the with and height
     friend class Renderable;
     friend class Simplex;
+    friend class Complex;
+
+    class Projection : public Matrix_h{
+    public:
+    /// @param FOV the horizontal angle of view
+    Projection(View view){
+        float ASPECT_RATIO = view.width/view.height;
+        float t = 1/tan(view.FOV*M_PI/360);
+        float r = t*ASPECT_RATIO;
+        float n = .10f;
+        float f = 1000.0f;
+
+        r1 = Vector3D_h(n/r,0,0,0);
+        r2 = Vector3D_h(0,n/t,0,0);
+        r3 = Vector3D_h(0,0,-(f+n)/(f-n), -2*f*n/(f-n));
+        r4 = Vector3D_h(0,0,-1,0);
+    }
+};
 
     public:
     void updateProjection(){
-        projectionMatrix = Projection(1.0f, 100.0f,100.0f);
+        projectionMatrix = Projection(*this);
     }
      void update(int newHeight, int newWidth, float newFOV){
         height = newHeight;
@@ -224,12 +236,15 @@ class View{
         this->updateProjection();
      }
 
-    View(int _w, int _h): width(_w), height(_h){
+    View(int _w, int _h, float _FOV): width(_w), height(_h), FOV(_FOV), projectionMatrix(Projection(*this)){
     //intentionly left blank
     }
 
     void transform(Matrix_h M){
         M * cameraMatrix;
+    }
+    void setFOV(float _FOV){
+        FOV = _FOV;
     }
     
 
@@ -297,9 +312,9 @@ class Simplex{
             view.projectionMatrix*(*this);
 
             //creates the shape for vmi engine to render 
-                shape->addPoint({V1.x,V1.y});
-                shape->addPoint({V2.x,V2.y});
-                shape->addPoint({V3.x,V3.y});
+                shape->addPoint({V1.x/V1.z,V1.y/V1.z});
+                shape->addPoint({V2.x/V2.z,V2.y/V2.z});
+                shape->addPoint({V3.x/V3.z,V3.y/V3.z});
                 shape->setFill(color);
 
             //Sets the renderables shape
@@ -317,24 +332,31 @@ class Simplex{
 class Complex{
     private:
     std::vector<Simplex> complex;
+    float size = 100;
     friend class Game;
+    friend class Cube;
+    
+    public:
     
     std::optional<Complex> operator*(Matrix_h M){
         std::optional<Complex> ans;
-        if(typeid(M) != typeid(Projection)){
+        if(typeid(M) != typeid(View::Projection)){
             for(auto it = begin(complex); it != end(complex); ++it){
                 *it = M*(*it);
             }
             return ans;
         }
-        assert(typeid(M) == typeid(Projection));
+        assert(typeid(M) == typeid(View::Projection));
         for(auto it = begin(complex); it != end(complex); ++it){
             ans->push_back(M*(*it));
         }
         return ans;
 
     }
-    public:
+    
+    Complex(){
+        objects.push_back(this);
+    }
     void push_back(Simplex simplex){
         complex.push_back(simplex);
     }
@@ -343,10 +365,11 @@ class Complex{
     friend std::optional<Complex> operator*(Matrix_h M, Complex &complex){
         return complex*M;
     }
-    void render(View view, float _scale){
+    void render(View view){
         //hr stack overflow
-        for(int it = 0; it < this->complex.size(); ++it){
-            this->complex.at(it).render(view, _scale);  
+        int i = 0;
+        for(i = 0; i < this->complex.size(); ++i){
+            this->complex.at(i).render(view,size);  
         }
     }
     friend std::ostream& operator<<(std::ostream& os, Complex complex){
@@ -356,14 +379,24 @@ class Complex{
         return os;
     }
 
+    public:
+    static void renderAll(View view){
+        for(int complex = 0; complex < objects.size(); ++complex){
+            objects.at(complex)->render(view);
+        }
+    }
+    //list of all objects
+    private:
+    static inline std::vector<Complex* > objects;
+
 };
 
 class Cube : public Complex{
     public:
-        Cube(){
-            //Back
-            this->push_back(Simplex(e3, e1+e3, e1+e2+e3, vmi::Color::Magenta));
-            this->push_back(Simplex(e3, e2+e3, e1+e2+e3, vmi::Color::Magenta));
+        Cube(float _size){
+            // //Back
+            // this->push_back(Simplex(e3, e1+e3, e1+e2+e3, vmi::Color::Magenta));
+            // this->push_back(Simplex(e3, e2+e3, e1+e2+e3, vmi::Color::Magenta));
             //Left Side
             this->push_back(Simplex(O, e3, e2+e3, vmi::Color::Yellow));
             this->push_back(Simplex(O, e2, e2+e3, vmi::Color::Yellow));
@@ -379,27 +412,52 @@ class Cube : public Complex{
             //Front
             this->push_back(Simplex(O, e1, e1+e2, vmi::Color::Magenta));
             this->push_back(Simplex(O, e2, e1+e2, vmi::Color::Magenta));
+            this->size = _size;
         }
+
+};
+
+class Player: public Cube{
+    public:
+    const static vmi::Key R = vmi::Key::A;
+    const static vmi::Key L = vmi::Key::B;
+    static Player* const self;
+
+    public:
+    Player() : Cube(100){
+        Matrix_h T = Translation(0.0f,0.0f,20.0f);
+        this->operator*(T);
+    }
+
+    static void move(float dt){
+        if(vmi::Game::isKeyPressed(R)){
+            Matrix_h T = Translation(dt/5, 0.0f, 0.0f);
+            self->operator*(T);
+        }
+        if(vmi::Game::isKeyPressed(L)){
+            Matrix_h T = Translation(-dt/5, 0.0f, 0.0f);
+            self->operator*(T);
+
+        }
+
+    }
+
 
 };
 
 class Game : public vmi::Game{
     private:
     View& view; 
-    Complex& complex;
-    Complex& complex2;
     public:
-        Game(int _width, int _height, Complex& _complex, Complex& _complex2, View& _view) : vmi::Game("3D Game", _width, _height), view(_view), complex(_complex), complex2(_complex2){
+        Game(int _width, int _height, View& _view) : vmi::Game("3D Game", _width, _height), view(_view){
             //Intetionly left blank
         }
         void update(double dt){
             dt = (float) dt;
-            Matrix_h Ry = Rotation_z(M_PI*dt/5);
-            Ry*complex;
-            complex.render(view, 100.0f);
-            Ry*complex2;
-            complex.render(view, 100.0f);
+            Player::move(dt);
+            Complex::renderAll(view);
 
             
         }
 };
+}//namespace engine

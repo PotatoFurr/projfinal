@@ -1,11 +1,10 @@
 #include <iostream>
 
 #include "3dEngine.hpp"
-// #include "runner.hpp"
-// #include "LANE.h"
 
 
-View view = View(800, 800);
+using namespace engine;
+View view = View(800, 800, 100.0f);
 
 // void inline DebugProj(Simplex simplex){
 //     Matrix_h T = Translation(10.0f,0.0f,0.0f);
@@ -24,23 +23,19 @@ View view = View(800, 800);
 int main(){
     view.updateProjection();
     
-   Matrix_h T = Translation(0.0f,0.0f,0.0f);
-   Matrix_h T2 = Translation(10.0f,0.0f,0.0f);
+   Matrix_h T = Translation(0.0f,0.0f,5.0f);
    Matrix_h Ry = Rotation_y(M_PI/8);
    Matrix_h Rx = Rotation_x(M_PI/8);
-   Matrix_h Rz = Rotation_z(M_PI/8);
+//    Matrix_h Rz = Rotation_z(M_PI/8);
 
-   Complex complex = Cube();
-   Complex complex2 = Cube();
-    Rx*complex;
-    Ry*complex;
-    Rz*complex;
-    T*complex;
-    Rx*complex2;
-    Ry*complex2;
-    Rz*complex2;
-    T2*complex2;
-    Game game = Game(800,800,complex, complex2, view);
+   Complex* complex = new Player();
+
+   Rx**complex;
+   Ry**complex;
+   T**complex;
+    // Rz**complex;
+    Complex::renderAll(view);
+    Game game = Game(800,800, view);
     game.playGame();
     return 0;
 }
