@@ -8,7 +8,7 @@ using namespace Krec;
 class Obstacle : public Complex
 {
     public:
-        Obstacle()
+        Obstacle() : Cube(100) //for now will be a cube
         {
 
 
@@ -18,17 +18,25 @@ class Obstacle : public Complex
         ~Obstacle()
         {
 
+            delete Complex;
 
+        };    
 
-        };
-
-        void isonscreen()
+        void MoveObj()
         {
-
-
+            Matrix_h T = Translation(0.0f, 0.0f, dt*5);
+            this->operator*(T);
+            
+        };
+        
+        void handleCollision(const Thing* other)
+        {
+            if (typeid(*other) == typeid(Wall))
+                {
+                die();
+                }
 
         };
-    
 
     private:
 

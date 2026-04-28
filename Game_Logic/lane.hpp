@@ -2,56 +2,68 @@
 
 #include "3dEngine.hpp"
 #include "obstacles.hpp"
-#include "runner.hpp"
 #include "LANE.h"
+#include "Movement.hpp"
+#include "Vector3d.hpp"
+#include "VertexSets.hpp"
+#include "VMIGameInterface.hpp"
+#include <vector>
 
 using namespace Krec;
 
 
+/*  
+for declaration
 
+Lane lane1 = new Lane(L1, player, 100);
+Lane lane1 = new Lane(L1, player, 400); (NUMBERS NOT FINAL, JUST FOR EXAMPLE)
+Lane lane1 = new Lane(L1, player, 700);
+
+
+
+
+*/
 class Lane
 {
     public:
-        Lane(lan slane, Runner* player) : slane(slane) //for player, will make slane two
+        Lane(char lan, Runner* player const, int xval) : player(player), lan(lan), xval(xval)
         {
-
-            
-
-        };
-
-        Lane() //for obstacles, will randomize lane 
-        {
-
-            
+                //assigns player pointer for when lane is called, will most likely use some sort of player->getLane() function
+                //assigns lan with assigned lane, will be used to compare if the lane is occupied by player
+                //assigns xval with what value of x is assigned with the lane
 
         };
     
         ~Lane()
         {
 
-            delete slane;
-
+            delete player;
         };
 
-        lan GetLane()
+        void handleCollision(const Thing* other)
         {
-
-            return slane;
+                //intentionally blank
 
         };
 
-        lan ChangeLane(lan inp)
+        void SpawnObj()
         {
+             // now set up to create the next pipes after a delay
 
-            slane = inp;
-            player->Vector3d(slane,400,10);
-            return slane;
+            rObj = ((rand() % 3) + 1);
+
+            new Obstacle(rObj, xval);
+
+            int delayTime = (rand() % 3) + 1;         // between 1 and 3 seconds
+            Timer::createTimer(delayTime, []() { Lane::SpawnObj(); });
 
         };
+
 
     private:
-
-        lan slane;
-        Runner* player;
+        char lan;
+        int xval;
+        int rObj;
+        Runner* player const;
 
 };
