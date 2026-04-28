@@ -60,6 +60,12 @@ class Vector3D_h{
             1
         );
     }
+    friend Vector3D_h operator*(int scale, Vector3D_h V){
+        V.x *= scale;
+        V.y *= scale;
+        V.z *= scale;
+        return V;
+    }
     void perspective_division(){
         if(this->w == 0){
             return;
@@ -310,11 +316,16 @@ class Simplex{
             vmi::PolygonShape* shape = new vmi::PolygonShape();
             //projects the matrix down to 2d
             view.projectionMatrix*(*this);
-
+            //HR: Calude on the formula only given in the quote
+            //pixel_x = (x_ndc + 1) / 2 * width
+            //pixel_y = (1 − y_ndc) / 2 * height     ← note the flip!
             //creates the shape for vmi engine to render 
-                shape->addPoint({V1.x/V1.z,V1.y/V1.z});
-                shape->addPoint({V2.x/V2.z,V2.y/V2.z});
-                shape->addPoint({V3.x/V3.z,V3.y/V3.z});
+                int w = view.width;
+                int h = view.height;
+
+                shape->addPoint({(V1.x/V1.z + 1)/2*w,(1-V1.y/V1.z)/2*h});
+                shape->addPoint({(V2.x/V2.z + 1)/2*w,(1-V2.y/V2.z)/2*h});
+                shape->addPoint({(V3.x/V3.z + 1)/2*w,(1-V3.y/V3.z)/2*h});
                 shape->setFill(color);
 
             //Sets the renderables shape
@@ -330,7 +341,7 @@ class Simplex{
 };
 
 class Complex{
-    private:
+    public:
     std::vector<Simplex> complex;
     float size = 100;
     friend class Game;
@@ -369,7 +380,7 @@ class Complex{
         //hr stack overflow
         int i = 0;
         for(i = 0; i < this->complex.size(); ++i){
-            this->complex.at(i).render(view,size);  
+            this->complex.at(i).render(view,1.0f);  
         }
     }
     friend std::ostream& operator<<(std::ostream& os, Complex complex){
@@ -398,20 +409,20 @@ class Cube : public Complex{
             // this->push_back(Simplex(e3, e1+e3, e1+e2+e3, vmi::Color::Magenta));
             // this->push_back(Simplex(e3, e2+e3, e1+e2+e3, vmi::Color::Magenta));
             //Left Side
-            this->push_back(Simplex(O, e3, e2+e3, vmi::Color::Yellow));
-            this->push_back(Simplex(O, e2, e2+e3, vmi::Color::Yellow));
+            this->push_back(Simplex(O, _size*e3, _size*(e2+e3), vmi::Color::Yellow));
+            this->push_back(Simplex(O, _size*e2, _size*(e2+e3), vmi::Color::Yellow));
             //Right Side
-            this->push_back(Simplex(e1, e1+e3, e1+e2+e3, vmi::Color::Yellow));
-            this->push_back(Simplex(e1, e1+e2, e1+e2+e3, vmi::Color::Yellow));
+            this->push_back(Simplex(_size*e1, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Yellow));
+            this->push_back(Simplex(_size*e1, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Yellow));
             //Top
-            this->push_back(Simplex(e2, e1+e2, e1+e2+e3, vmi::Color::White));
-            this->push_back(Simplex(e2, e1+e3, e1+e2+e3, vmi::Color::White));
+            this->push_back(Simplex(_size*e2, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::White));
+            this->push_back(Simplex(_size*e2, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::White));
             //Bottom
-            this->push_back(Simplex(O, e1, e1+e3, vmi::Color::White));
-            this->push_back(Simplex(O, e3, e1+e3, vmi::Color::White));
+            this->push_back(Simplex(O, _size*e1, _size*(e1+e3), vmi::Color::White));
+            this->push_back(Simplex(O, _size*e3, _size*(e1+e3), vmi::Color::White));
             //Front
-            this->push_back(Simplex(O, e1, e1+e2, vmi::Color::Magenta));
-            this->push_back(Simplex(O, e2, e1+e2, vmi::Color::Magenta));
+            this->push_back(Simplex(O, _size*e1, _size*(e1+e2), vmi::Color::Magenta));
+            this->push_back(Simplex(O, _size*e2, _size*(e1+e2), vmi::Color::Magenta));
             this->size = _size;
         }
 
@@ -420,25 +431,47 @@ class Cube : public Complex{
 class Player: public Cube{
     public:
     const static vmi::Key R = vmi::Key::A;
-    const static vmi::Key L = vmi::Key::B;
+    const static vmi::Key L = vmi::Key::D;
+    const static vmi::Key U = vmi::Key::W;
+    const static vmi::Key D = vmi::Key::S;
+    const static vmi::Key F = vmi::Key::Q;
+    const static vmi::Key B = vmi::Key::E;
     static Player* const self;
 
     public:
-    Player() : Cube(100){
+    Player() : Cube(20){
         Matrix_h T = Translation(0.0f,0.0f,20.0f);
         this->operator*(T);
     }
 
-    static void move(float dt){
+    static void move(float dt, float speed){
         if(vmi::Game::isKeyPressed(R)){
-            Matrix_h T = Translation(dt/5, 0.0f, 0.0f);
+            Matrix_h T = Translation(dt*speed, 0.0f, 0.0f);
             self->operator*(T);
         }
         if(vmi::Game::isKeyPressed(L)){
-            Matrix_h T = Translation(-dt/5, 0.0f, 0.0f);
+            Matrix_h T = Translation(-dt*speed, 0.0f, 0.0f);
             self->operator*(T);
 
         }
+        if(vmi::Game::isKeyPressed(D)){
+            Matrix_h T = Translation(0.0f, dt*speed, 0.0f);
+            self->operator*(T);
+        }
+        if(vmi::Game::isKeyPressed(U)){
+            Matrix_h T = Translation(0.0f, -dt*speed, 0.0f);
+            self->operator*(T);
+
+        }
+        if(vmi::Game::isKeyPressed(F)){
+            Matrix_h T = Translation(0.0f, 0.0f, dt*speed);
+            self->operator*(T);
+        }
+        if(vmi::Game::isKeyPressed(B)){
+            Matrix_h T = Translation(0.0f, 0.0f, -dt*speed);
+            self->operator*(T);
+        }
+
 
     }
 
@@ -454,7 +487,7 @@ class Game : public vmi::Game{
         }
         void update(double dt){
             dt = (float) dt;
-            Player::move(dt);
+            Player::move(dt, 20.0f);
             Complex::renderAll(view);
 
             
