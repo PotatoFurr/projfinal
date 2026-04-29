@@ -11,6 +11,7 @@ View view = View(800, 800, 90.0f);
 int main(){
 
     //HR: Stack overflow on how to make a singleton
+
     Complex* base = new Floor(10.0f); 
 
     // view.updateProjection();
@@ -23,7 +24,6 @@ int main(){
 //    Player::self->operator*(Rx);
 //    Player::self->operator*(Ry);
 //    Player::self->operator*(T);
-    std::cout << *base;
     Complex::renderAll(view);
     Game game = Game(800,800, view);
     game.playGame();

@@ -19,6 +19,8 @@ class Vector3D_h{
     float z;
     float w;
     friend class Matrix_h;
+    friend class Player;
+
 
 
     public:
@@ -213,6 +215,8 @@ class View{
     friend class Renderable;
     friend class Simplex;
     friend class Complex;
+    friend class Player;
+
 
     class Projection : public Matrix_h{
     public:
@@ -288,6 +292,7 @@ class Simplex{
     Vector3D_h V3;
     vmi::Color color;
     Renderable* img;
+    friend class Player;
 
     public:
     Simplex(Vector3D_h _V1, Vector3D_h _V2, Vector3D_h _V3, vmi::Color _color): V1(_V1), V2(_V2), V3(_V3), color(_color), img(nullptr){
@@ -326,12 +331,13 @@ class Simplex{
                 shape->setFill(color);
 
             //Sets the renderables shape
-            // img->setZ(-(V1.z+V2.z+V3.z)/3);
+            img->setZ(-(V1.z+V2.z+V3.z)/3);
+            // std::cout << *this << ", z-Value: " << (V1.z+V2.z+V3.z)/3 << std::endl;;
             img->setShape(shape);
     }
 
     friend std::ostream& operator<<(std::ostream& os, Simplex S){
-        os << "{" <<  S.V1 << ", " << S.V2 << ", " << S.V3 << "}" << std::endl << "Renderable @ " << S.img;
+        os << "{" <<  S.V1 << ", " << S.V2 << ", " << S.V3 << "}" ;
         return os;
     }
 
@@ -344,6 +350,8 @@ class Complex{
     float size = 100;
     friend class Game;
     friend class Cube;
+    friend class Player;
+
     
     public:
     
@@ -403,24 +411,24 @@ class Complex{
 class Cube : public Complex{
     public:
         Cube(float _size){
-            //Back
-            this->push_back(Simplex(_size*e3, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Magenta));
-            this->push_back(Simplex(_size*e3, _size*(e2+e3), _size*(e1+e2+e3), vmi::Color::Magenta));
-            //Left Side
-            this->push_back(Simplex(O, _size*e3, _size*(e2+e3), vmi::Color::Yellow));
-            this->push_back(Simplex(O, _size*e2, _size*(e2+e3), vmi::Color::Yellow));
-            // //Right Side
-            // this->push_back(Simplex(_size*e1, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Yellow));
-            // this->push_back(Simplex(_size*e1, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Yellow));
-            //Top
-            this->push_back(Simplex(_size*e2, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Blue));
-            this->push_back(Simplex(_size*e2, _size*(e2+e3), _size*(e1+e2+e3), vmi::Color::Blue));
-            //Bottom
-            this->push_back(Simplex(O, _size*(e1), _size*(e1+e3), vmi::Color::Blue));
-            this->push_back(Simplex(O, _size*(e3), _size*(e1+e3), vmi::Color::Blue));
             //Front
             this->push_back(Simplex(O, _size*e1, _size*(e1+e2), vmi::Color::Magenta));
             this->push_back(Simplex(O, _size*e2, _size*(e1+e2), vmi::Color::Magenta));
+            //Left Side
+            this->push_back(Simplex(O, _size*e3, _size*(e2+e3), vmi::Color::Yellow));
+            this->push_back(Simplex(O, _size*e2, _size*(e2+e3), vmi::Color::Yellow));
+            //Bottom
+            this->push_back(Simplex(O, _size*(e1), _size*(e1+e3), vmi::Color::Blue));
+            this->push_back(Simplex(O, _size*(e3), _size*(e1+e3), vmi::Color::Blue));
+            //Right Side
+            this->push_back(Simplex(_size*e1, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Yellow));
+            this->push_back(Simplex(_size*e1, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Yellow));
+            //Back
+            this->push_back(Simplex(_size*e3, _size*(e1+e3), _size*(e1+e2+e3), vmi::Color::Magenta));
+            this->push_back(Simplex(_size*e3, _size*(e2+e3), _size*(e1+e2+e3), vmi::Color::Magenta));
+            //Top
+            this->push_back(Simplex(_size*e2, _size*(e1+e2), _size*(e1+e2+e3), vmi::Color::Blue));
+            this->push_back(Simplex(_size*e2, _size*(e2+e3), _size*(e1+e2+e3), vmi::Color::Blue));
             // //Front
             // this->push_back(Simplex(O, _size*e1, _size*(e1+e2), vmi::Color::Magenta));
             // this->push_back(Simplex(O, _size*e2, _size*(e1+e2), vmi::Color::Magenta));
@@ -433,10 +441,8 @@ class Player: public Cube{
     public:
     const static vmi::Key R = vmi::Key::A;
     const static vmi::Key L = vmi::Key::D;
-    const static vmi::Key U = vmi::Key::W;
-    const static vmi::Key D = vmi::Key::S;
-    const static vmi::Key F = vmi::Key::Q;
-    const static vmi::Key B = vmi::Key::E;
+    const static vmi::Key F = vmi::Key::W;
+    const static vmi::Key B = vmi::Key::S;
     static Player* const self;
 
     public:
@@ -447,20 +453,11 @@ class Player: public Cube{
 
     static void move(float dt, float speed){
         if(vmi::Game::isKeyPressed(R)){
-            Matrix_h T = Translation(dt*speed, 0.0f, 0.0f);
+            Matrix_h T = Translation(-dt*speed, 0.0f, 0.0f);
             self->operator*(T);
         }
         if(vmi::Game::isKeyPressed(L)){
-            Matrix_h T = Translation(-dt*speed, 0.0f, 0.0f);
-            self->operator*(T);
-
-        }
-        if(vmi::Game::isKeyPressed(D)){
-            Matrix_h T = Translation(0.0f, dt*speed, 0.0f);
-            self->operator*(T);
-        }
-        if(vmi::Game::isKeyPressed(U)){
-            Matrix_h T = Translation(0.0f, -dt*speed, 0.0f);
+            Matrix_h T = Translation(dt*speed, 0.0f, 0.0f);
             self->operator*(T);
 
         }
@@ -473,34 +470,24 @@ class Player: public Cube{
             self->operator*(T);
         }
 
-        if(vmi::Game::isKeyPressed(vmi::Key::LAlt)){
-            if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Left)){
-                Matrix_h R = Rotation_z(dt);
-                self->operator*(R);
-            }
-            if(vmi::Game::isMouseButtonPressed(vmi::MouseButton::Right)){
-                Matrix_h R = Rotation_z(-dt);
-                self->operator*(R);
-            }
+        /// @param Vy y velocity
+        static float Vy = 0.0f;
+        const float Y_MIN = -50;
+        const float GRAVITY = 40;
+        float bottom = self->complex.at(0).V1.y;
+        // Jump Machenics
+        if(vmi::Game::isKeyPressed(vmi::Key::Space)){
+            Vy = 40.0f;
         }
+        if(bottom >= Y_MIN){
+            Vy -= GRAVITY*dt;
+        }
+        if(bottom <= Y_MIN && Vy <=0.0f){
+            Vy = 0.0f;
+        }
+        Matrix_h Gravity = Translation(0,Vy*dt,0);
+        self->operator*(Gravity);
 
-        if(vmi::Game::isKeyPressed(vmi::Key::Left)){
-            Matrix_h R = Rotation_y(dt);
-            self->operator*(R);
-        }
-        if(vmi::Game::isKeyPressed(vmi::Key::Right)){
-            Matrix_h R = Rotation_y(-dt);
-            self->operator*(R);
-        }
-
-        if(vmi::Game::isKeyPressed(vmi::Key::Up)){
-            Matrix_h R = Rotation_x(dt);
-            self->operator*(R);
-        }
-        if(vmi::Game::isKeyPressed(vmi::Key::Down)){
-            Matrix_h R = Rotation_x(-dt);
-            self->operator*(R);
-        }
     }
 };
 
@@ -509,7 +496,7 @@ class Floor: public Complex{
     public:
     Floor(float _size){
     Matrix_h T = Translation(0.0f,0.0f,100.0f);
-    this->push_back(Simplex(O, _size*(e1), _size*(e1+e3), vmi::Color::White));
+    this->push_back(Simplex(O, -50*e2, _size*(e1+e3), vmi::Color::White));
     this->push_back(Simplex(O, _size*(e3), _size*(e1+e3), vmi::Color::White));
     this->operator*(T);
     }
