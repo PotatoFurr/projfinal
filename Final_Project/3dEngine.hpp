@@ -535,7 +535,9 @@ class Wall: public Complex{
         this->operator*(T);
 
         Matrix_h T = Translation(0.0f,0.0f,-100.0f);
-
+        //dont worry about above ^ need to change to align wall to back of center
+        
+        //then add movement towards screen/deletion
     }
 
     void CreateWalls(double dt) {
