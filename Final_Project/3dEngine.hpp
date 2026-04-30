@@ -550,6 +550,60 @@ class Floor: public Complex{
     }
 };
 
+
+
+
+class Wall: public Complex{
+
+    #define x1 Vector3D_h((xv-e),0,0,1)
+    #define x2 Vector3D_h((xv-e),10,0,1)
+    #define x3 Vector3D_h((xv+e),0,0,1)
+    #define x4 Vector3D_h((xv+e),10,0,1)
+    #define e1 Vector3D_h(20,0,0,1)
+    #define e2 Vector3D_h(0,10,0,1)
+
+    public:
+    Wall(float _size, float xv, double dt){
+        
+        //left side of wall
+
+        Matrix_h T = Translation(0.0f,0.0f,-100.0f);
+
+        this->push_back(Simplex(O, _size*x1, _size*(x2), vmi::Color::Green));
+        this->push_back(Simplex(O, _size*e2, _size*(x2), vmi::Color::Green));
+
+        //wall above hole
+        this->push_back(Simplex(_size*(Vector3D_h((xv-e),5,0,1)), _size*(Vector3D_h((xv+e),5,0,1)), _size*(x4), vmi::Color::Green));
+        this->push_back(Simplex(_size*(Vector3D_h((xv-e),5,0,1)), _size*(x2), _size*(x4), vmi::Color::Green));
+
+        //right side of wall    
+        this->push_back(Simplex(_size*x3, _size*e1, _size*(e1+e2), vmi::Color::Green));
+        this->push_back(Simplex(_size*x3, _size*x4, _size*(e1+e2), vmi::Color::Green));
+
+        this->operator*(T);
+
+        Matrix_h T = Translation(0.0f,0.0f,-100.0f);
+
+    }
+
+    void CreateWalls(double dt) {
+
+        //int holeloc = rand() % 10;
+        
+    }
+
+    private:
+        float xv = 10;
+        float e = 2.5;
+
+    #undef x1
+    #undef x2
+    #undef x3
+    #undef x4
+    #undef e1
+    #undef e2
+};
+
 class Game : public vmi::Game{
     private:
     View* view; 
