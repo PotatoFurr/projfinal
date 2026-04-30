@@ -11,9 +11,10 @@
 
 #define near 1
 #define far 100
+#define _Y_MIN -50.0f
 namespace engine{
 class Vector3D_h{
-    private:
+    public:
     float x;
     float y;
     float z;
@@ -28,6 +29,7 @@ class Vector3D_h{
     friend class Matrix_h;
     friend class Simplex;
     friend class Complex; 
+    
     //////
     /// @brief Initilizes a blank Vector with all Values of 0
     //////
@@ -68,28 +70,10 @@ class Vector3D_h{
         V.z *= scale;
         return V;
     }
-    void perspective_division(){
-        if(this->w == 0){
-            return;
-        }
-        this->x = this->x / this->w;
-        this->y = this->y / this->y;
-        this->z = this->z / this->z;
-        this->w = 1.0f;
-    }
 
     friend std::ostream& operator<<(std::ostream& os, Vector3D_h vect){
         os << "("<< vect.x << ", " << vect.y << ", " << vect.z << ", " << vect.w << ")";
         return os;
-    }
-
-    float operator[](int index){
-        switch(index){
-            case 0: return x;
-            case 1: return y;
-            case 2: return z;
-            default: throw std::runtime_error("Out of Bounds Indexing");
-        }
     }
 
     friend Vector3D_h operator+(Vector3D_h V1, Vector3D_h V2){
@@ -114,7 +98,8 @@ class Matrix_h{
     friend class Projection;
 
     public:
-    Matrix_h(){
+    Matrix_h():
+       r1(Vector3D_h(1,0,0,0)), r2(Vector3D_h(0,1,0,0)), r3(Vector3D_h(0,0,1,0)), r4(Vector3D_h(0,0,0,1)){
         //intetionly left blank
     }
     Matrix_h(Vector3D_h _c1, Vector3D_h _c2, Vector3D_h _c3, Vector3D_h _c4): r1(_c1), r2(_c2), r3(_c3), r4(_c4){
@@ -124,8 +109,12 @@ class Matrix_h{
     /// @brief FIX ME
     /// @param M1,M2 
     //////
-    friend Matrix_h operator*(Matrix_h M1, Matrix_h& M2){
-        return Matrix_h();
+    friend Matrix_h operator*(Matrix_h M1, Matrix_h M2){
+        Vector3D_h c1 = Vector3D_h(M2.r1.x,M2.r2.x,M2.r3.x,M2.r4.x);
+        Vector3D_h c2 = Vector3D_h(M2.r1.y,M2.r2.y,M2.r3.y,M2.r4.y);
+        Vector3D_h c3 = Vector3D_h(M2.r1.z,M2.r2.z,M2.r3.z,M2.r4.z);
+        Vector3D_h c4 = Vector3D_h(M2.r1.w,M2.r2.w,M2.r3.w,M2.r4.w);
+        return Matrix_h(M1*c1,M1*c2,M1*c3,M1*c4);
     }
     friend Vector3D_h operator*(Matrix_h M, Vector3D_h V){
         Vector3D_h ans = Vector3D_h(
@@ -155,9 +144,9 @@ class Translation : public Matrix_h{
     }
     public:
     Translation(Vector3D_h V): Matrix_h(
-        Vector3D_h(1.0f,0.0f,0.0f,V[0]),
-        Vector3D_h(0.0f,1.0f,0.0f,V[1]),
-        Vector3D_h(0.0f,0.0f,1.0f,V[2]),
+        Vector3D_h(1.0f,0.0f,0.0f,V.x),
+        Vector3D_h(0.0f,1.0f,0.0f,V.y),
+        Vector3D_h(0.0f,0.0f,1.0f,V.z),
         Vector3D_h(0.0f,0.0f,0.0f,1.0f)){
             //intetionly left blank
         }
@@ -209,8 +198,9 @@ class View{
     private:
     int width; /// window width
     int height; /// window height
-    Matrix_h cameraMatrix; // holds the maipulation of the world so new objects can have it applied and tracked
     float FOV = 120;
+    Matrix_h R_camera; // holds the maipulation of the world so new objects can have it applied and tracked
+    Vector3D_h T_camera; /// changex with the with and height
     Matrix_h projectionMatrix; /// changex with the with and height
     friend class Renderable;
     friend class Simplex;
@@ -234,11 +224,11 @@ class View{
         r4 = Vector3D_h(0,0,-1,0);
     }
 };
-
-    public:
     void updateProjection(){
         projectionMatrix = Projection(*this);
     }
+
+    public:
      void update(int newHeight, int newWidth, float newFOV){
         height = newHeight;
         width = newWidth;
@@ -249,12 +239,15 @@ class View{
     View(int _w, int _h, float _FOV): width(_w), height(_h), FOV(_FOV), projectionMatrix(Projection(*this)){
     //intentionly left blank
     }
-
-    void transform(Matrix_h M){
-        M * cameraMatrix;
-    }
     void setFOV(float _FOV){
         FOV = _FOV;
+    }
+    void moveView(Vector3D_h shift){
+        T_camera = shift + T_camera;
+    }
+    void rotateView(Matrix_h viewRotation){
+        R_camera = viewRotation * R_camera;
+
     }
     
 
@@ -309,29 +302,36 @@ class Simplex{
         M*simplex.V3,
         simplex.color,
     simplex.img);
-        
+    }
+    Simplex operator+(Vector3D_h V){
+        return Simplex(
+        V1 + V,
+        V2 + V,
+        V3 + V,
+        color,img);
     }
 
-    void render(View view, float _scale){
-            img = new Renderable(view);
-            img->scale =_scale;
+    void render(View* view, Vector3D_h pos){
+            img = new Renderable(*view);
             vmi::PolygonShape* shape = new vmi::PolygonShape();
             //projects the matrix down to 2d
-            view.projectionMatrix*(*this);
+            Simplex worldSimplex = this->operator+(pos);
+            worldSimplex = worldSimplex + view->T_camera;
+            worldSimplex = view->R_camera*worldSimplex;
             //HR: Calude on the formula only given in the quote
             //pixel_x = (x_ndc + 1) / 2 * width
             //pixel_y = (1 − y_ndc) / 2 * height     ← note the flip!
             //creates the shape for vmi engine to render 
-                int w = view.width;
-                int h = view.height;
+                int w = view->width;
+                int h = view->height;
 
-                shape->addPoint({(V1.x/V1.z )/2*w,(1/2-V1.y/V1.z)/2*h});
-                shape->addPoint({(V2.x/V2.z )/2*w,(1/2-V2.y/V2.z)/2*h});
-                shape->addPoint({(V3.x/V3.z )/2*w,(1/2-V3.y/V3.z)/2*h});
+                shape->addPoint({( worldSimplex.V1.x /  worldSimplex.V1.z   )/2*w,(1/2- worldSimplex.V1.y /  worldSimplex.V1.z ) /2*h});
+                shape->addPoint({( worldSimplex.V2.x /  worldSimplex.V2.z   )/2*w,(1/2- worldSimplex.V2.y /  worldSimplex.V2.z ) /2*h});
+                shape->addPoint({( worldSimplex.V3.x /  worldSimplex.V3.z   )/2*w,(1/2- worldSimplex.V3.y /  worldSimplex.V3.z ) /2*h});
                 shape->setFill(color);
 
             //Sets the renderables shape
-            img->setZ(-(V1.z+V2.z+V3.z)/3);
+            img->setZ(-(worldSimplex.V1.z+worldSimplex.V2.z+worldSimplex.V3.z)/3);
             // std::cout << *this << ", z-Value: " << (V1.z+V2.z+V3.z)/3 << std::endl;;
             img->setShape(shape);
     }
@@ -347,7 +347,7 @@ class Simplex{
 class Complex{
     public:
     std::vector<Simplex> complex;
-    float size = 100;
+    Vector3D_h position;
     friend class Game;
     friend class Cube;
     friend class Player;
@@ -382,12 +382,15 @@ class Complex{
     friend std::optional<Complex> operator*(Matrix_h M, Complex &complex){
         return complex*M;
     }
-    void render(View view){
+    void render(View* view){
         //hr stack overflow
         int i = 0;
         for(i = 0; i < this->complex.size(); ++i){
-            this->complex.at(i).render(view,1.0f);  
+            this->complex.at(i).render(view, position);  
         }
+    }
+    Vector3D_h getWorldPosition(View view){
+        return position + view.T_camera;
     }
     friend std::ostream& operator<<(std::ostream& os, Complex complex){
         for(auto it = begin(complex.complex); it != end(complex.complex); ++it){
@@ -397,7 +400,7 @@ class Complex{
     }
 
     public:
-    static void renderAll(View view){
+    static void renderAll(View* view){
         for(int complex = 0; complex < objects.size(); ++complex){
             objects.at(complex)->render(view);
         }
@@ -434,6 +437,30 @@ class Cube : public Complex{
             // this->push_back(Simplex(O, _size*e2, _size*(e1+e2), vmi::Color::Magenta));
             // this->size = _size;
         }
+        Cube(float _size, vmi::Color color){
+            //Front
+            this->push_back(Simplex(O, _size*e1, _size*(e1+e2), color));
+            this->push_back(Simplex(O, _size*e2, _size*(e1+e2), color));
+            //Left Side
+            this->push_back(Simplex(O, _size*e3, _size*(e2+e3), color));
+            this->push_back(Simplex(O, _size*e2, _size*(e2+e3), color));
+            //Bottom
+            this->push_back(Simplex(O, _size*(e1), _size*(e1+e3), color));
+            this->push_back(Simplex(O, _size*(e3), _size*(e1+e3), color));
+            //Right Side
+            this->push_back(Simplex(_size*e1, _size*(e1+e3), _size*(e1+e2+e3), color ));
+            this->push_back(Simplex(_size*e1, _size*(e1+e2), _size*(e1+e2+e3), color ));
+            //Back
+            this->push_back(Simplex(_size*e3, _size*(e1+e3), _size*(e1+e2+e3), color ));
+            this->push_back(Simplex(_size*e3, _size*(e2+e3), _size*(e1+e2+e3), color));
+            //Top
+            this->push_back(Simplex(_size*e2, _size*(e1+e2), _size*(e1+e2+e3), color));
+            this->push_back(Simplex(_size*e2, _size*(e2+e3), _size*(e1+e2+e3), color)) ;
+            // //Front
+            // this->push_back(Simplex(O, _size*e1, _size*(e1+e2), vmi::Color::Magenta));
+            // this->push_back(Simplex(O, _size*e2, _size*(e1+e2), vmi::Color::Magenta));
+            // this->size = _size;
+        }
 
 };
 
@@ -446,35 +473,56 @@ class Player: public Cube{
     static Player* const self;
 
     public:
-    Player() : Cube(20){
-        Matrix_h T = Translation(0.0f,0.0f,100.0f);
-        this->operator*(T);
+    Player(Vector3D_h init_position) : Cube(20){
+        position = init_position;
+    }
+    Player(float x, float y, float z) : Cube(20){
+        position = {x,y,z,1.0f};
     }
 
-    static void move(float dt, float speed){
+    static void move(float dt, float speed, View* view){
+        //Model Movemnets
         if(vmi::Game::isKeyPressed(R)){
-            Matrix_h T = Translation(-dt*speed, 0.0f, 0.0f);
-            self->operator*(T);
+            Vector3D_h T = Vector3D_h(-dt*speed, 0.0f, 0.0f,0.0f);
+            self->position = self->position + T;
         }
         if(vmi::Game::isKeyPressed(L)){
-            Matrix_h T = Translation(dt*speed, 0.0f, 0.0f);
-            self->operator*(T);
-
+            Vector3D_h T = Vector3D_h(dt*speed, 0.0f, 0.0f,0.0f);
+            self->position = self->position + T;
         }
         if(vmi::Game::isKeyPressed(F)){
-            Matrix_h T = Translation(0.0f, 0.0f, dt*speed);
-            self->operator*(T);
+            Vector3D_h T = Vector3D_h(0.0f, 0.0f,dt*speed,0.0f);
+            self->position = self->position + T;
         }
         if(vmi::Game::isKeyPressed(B)){
-            Matrix_h T = Translation(0.0f, 0.0f, -dt*speed);
-            self->operator*(T);
+            Vector3D_h T = Vector3D_h(0.0f, 0.0f, -dt*speed, 0.0f);
+            self->position = self->position + T;
+
+        }
+
+        //camera movements
+        if(vmi::Game::isKeyPressed(vmi::Key::Right)){
+            Vector3D_h T = Vector3D_h(-dt*speed, 0.0f, 0.0f,0.0f);
+            view->T_camera = view->T_camera + T;
+        }
+        if(vmi::Game::isKeyPressed(vmi::Key::Left)){
+            Vector3D_h T = Vector3D_h(dt*speed, 0.0f, 0.0f,0.0f);
+            view->T_camera = view->T_camera + T;
+        }
+        if(vmi::Game::isKeyPressed(vmi::Key::Up)){
+            Vector3D_h T = Vector3D_h(0.0f, 0.0f,dt*speed,0.0f);
+            view->T_camera = view->T_camera + T;
+        }
+        if(vmi::Game::isKeyPressed(vmi::Key::Down)){
+            Vector3D_h T = Vector3D_h(0.0f, 0.0f, -dt*speed, 0.0f);
+            view->T_camera = view->T_camera + T;
         }
 
         /// @param Vy y velocity
         static float Vy = 0.0f;
-        const float Y_MIN = -50;
+        const float Y_MIN = _Y_MIN;
         const float GRAVITY = 40;
-        float bottom = self->complex.at(0).V1.y;
+        float bottom = self->getWorldPosition(*view).y;
         // Jump Machenics
         if(vmi::Game::isKeyPressed(vmi::Key::Space)){
             Vy = 40.0f;
@@ -485,8 +533,8 @@ class Player: public Cube{
         if(bottom <= Y_MIN && Vy <=0.0f){
             Vy = 0.0f;
         }
-        Matrix_h Gravity = Translation(0,Vy*dt,0);
-        self->operator*(Gravity);
+        std::cout << bottom << std::endl;
+       self->position = self->position + Vector3D_h(0.0f,Vy*dt,0.0f,0.0f);
 
     }
 };
@@ -504,14 +552,14 @@ class Floor: public Complex{
 
 class Game : public vmi::Game{
     private:
-    View& view; 
+    View* view; 
     public:
-        Game(int _width, int _height, View& _view) : vmi::Game("3D Game", _width, _height), view(_view){
+        Game(int _width, int _height, View* _view) : vmi::Game("3D Game", _width, _height), view(_view){
             //Intetionly left blank
         }
         void update(double dt){
             dt = (float) dt;
-            Player::move(dt, 20.0f);
+            Player::move(dt, 20.0f, view);
             Complex::renderAll(view);
         }
             // Game loop

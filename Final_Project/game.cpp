@@ -4,26 +4,15 @@
 
 
 using namespace engine;
-View view = View(800, 800, 90.0f);
+View* view = new View(800, 800, 90.0f);
 
 
-    Player * const Player::self = new Player();
+Player * const Player::self = new Player(0.0f,0.0f,100.0f);
+Complex* bottom = new Cube(5, vmi::Color::Cyan);
 int main(){
+    bottom->position = Vector3D_h(0,0,10,0);
 
-    //HR: Stack overflow on how to make a singleton
-
-    Complex* base = new Floor(10.0f); 
-
-    // view.updateProjection();
-//    Matrix_h T = Translation(-100.0f,80.0f,40.0f);
-//    Matrix_h Ry = Rotation_y(M_PI/8);
-//    Matrix_h Rx = Rotation_x(M_PI/8);
-//    Matrix_h Rz = Rotation_z(M_PI/8);
-
-
-//    Player::self->operator*(Rx);
-//    Player::self->operator*(Ry);
-//    Player::self->operator*(T);
+    view->moveView(Vector3D_h(0,0,0,1));
     Complex::renderAll(view);
     Game game = Game(800,800, view);
     game.playGame();
