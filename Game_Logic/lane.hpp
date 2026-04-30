@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 
 #include "3dEngine.hpp"
 #include "obstacles.hpp"
@@ -12,7 +12,7 @@
 using namespace Krec;
 
 
-/*  
+ 
 for declaration
 
 Lane lane1 = new Lane(L1, player, 100);
@@ -22,7 +22,7 @@ Lane lane1 = new Lane(L1, player, 700);
 
 
 
-*/
+
 class Lane
 {
     public:
@@ -66,4 +66,4 @@ class Lane
         int rObj;
         Runner* player const;
 
-};
+};*/

@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 #include "3dEngine.hpp"
 #include "lane.hpp"
 #include "LANE.h"
@@ -42,4 +42,4 @@ class Obstacle : public Complex
 
     bool onscreen;
 
-};
+};*/
