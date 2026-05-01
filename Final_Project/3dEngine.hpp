@@ -12,6 +12,9 @@
 #define near 1
 #define far 100
 #define _Y_MIN -50.0f
+#define _Z_MAX 150.0f
+#define _Z_MIN 50.0f
+
 namespace engine{
 class Vector3D_h{
     public:
@@ -279,7 +282,7 @@ class Renderable : public vmi::Thing{
 /// @brief long as the asset is used, but the rendered aspect is changed based on game requiremnts 
 //////
 class Simplex{
-    private:
+    public:
     Vector3D_h V1;
     Vector3D_h V2;
     Vector3D_h V3;
@@ -312,6 +315,9 @@ class Simplex{
     }
 
     void render(View* view, Vector3D_h pos){
+        if(pos.z < 0){
+            return;
+        }
             img = new Renderable(*view);
             vmi::PolygonShape* shape = new vmi::PolygonShape();
             //projects the matrix down to 2d
@@ -402,11 +408,12 @@ class Complex{
     public:
     static void renderAll(View* view){
         for(int complex = 0; complex < objects.size(); ++complex){
+            
             objects.at(complex)->render(view);
         }
     }
     //list of all objects
-    private:
+    public:
     static inline std::vector<Complex* > objects;
 
 };
@@ -482,23 +489,21 @@ class Player: public Cube{
 
     static void move(float dt, float speed, View* view){
         //Model Movemnets
+        Vector3D_h T = Vector3D_h(0.0f, 0.0f, 0.0f, 0.0f);
         if(vmi::Game::isKeyPressed(R)){
-            Vector3D_h T = Vector3D_h(-dt*speed, 0.0f, 0.0f,0.0f);
-            self->position = self->position + T;
+            T = T + Vector3D_h(-dt*speed, 0.0f, 0.0f,0.0f);
         }
         if(vmi::Game::isKeyPressed(L)){
-            Vector3D_h T = Vector3D_h(dt*speed, 0.0f, 0.0f,0.0f);
-            self->position = self->position + T;
+            T = T + Vector3D_h(dt*speed, 0.0f, 0.0f,0.0f);
         }
-        if(vmi::Game::isKeyPressed(F)){
-            Vector3D_h T = Vector3D_h(0.0f, 0.0f,dt*speed,0.0f);
-            self->position = self->position + T;
+        if(vmi::Game::isKeyPressed(F) && self->position.z < _Z_MAX ){
+            T = T + Vector3D_h(0.0f, 0.0f,dt*speed,0.0f);
         }
-        if(vmi::Game::isKeyPressed(B)){
-            Vector3D_h T = Vector3D_h(0.0f, 0.0f, -dt*speed, 0.0f);
-            self->position = self->position + T;
+        if(_Z_MIN < self->position.z && vmi::Game::isKeyPressed(B)){
+            T = T + Vector3D_h(0.0f, 0.0f, -dt*speed, 0.0f);
+        }
+        self->position = self->position + T;
 
-        }
 
         //camera movements
         if(vmi::Game::isKeyPressed(vmi::Key::Right)){
@@ -533,76 +538,59 @@ class Player: public Cube{
         if(bottom <= Y_MIN && Vy <=0.0f){
             Vy = 0.0f;
         }
-        std::cout << bottom << std::endl;
        self->position = self->position + Vector3D_h(0.0f,Vy*dt,0.0f,0.0f);
-
+        
     }
 };
-
-class Floor: public Complex{
-    
-    public:
-    Floor(float _size){
-    Matrix_h T = Translation(0.0f,0.0f,100.0f);
-    this->push_back(Simplex(O, -50*e2, _size*(e1+e3), vmi::Color::White));
-    this->push_back(Simplex(O, _size*(e3), _size*(e1+e3), vmi::Color::White));
-    this->operator*(T);
-    }
-};
-
-
 
 
 class Wall: public Complex{
-
-    #define x1 Vector3D_h((xv-e),0,0,1)
-    #define x2 Vector3D_h((xv-e),10,0,1)
-    #define x3 Vector3D_h((xv+e),0,0,1)
-    #define x4 Vector3D_h((xv+e),10,0,1)
-    #define e1 Vector3D_h(20,0,0,1)
-    #define e2 Vector3D_h(0,10,0,1)
-
     public:
-    Wall(float _size, float xv, double dt){
-        
+    /// @brief 
+    /// @param _size the size of the wall
+    /// @param hole the x position of the hole
+    /// @param epsilon the width of the hole
+    Wall(float _size, float hole, float epsilon){
+        position = Vector3D_h(-100.0f,_Y_MIN,500.0f,1.0f);
         //left side of wall
 
-        Matrix_h T = Translation(0.0f,0.0f,-100.0f);
-
-        this->push_back(Simplex(O, _size*x1, _size*(x2), vmi::Color::Green));
-        this->push_back(Simplex(O, _size*e2, _size*(x2), vmi::Color::Green));
+        this->push_back(Simplex(O, hole*e1, _size*e2, vmi::Color::Green));
+        this->push_back(Simplex(_size*e2, hole*e1, _size*e2 + hole*e1, vmi::Color::Green));
 
         //wall above hole
-        this->push_back(Simplex(_size*(Vector3D_h((xv-e),5,0,1)), _size*(Vector3D_h((xv+e),5,0,1)), _size*(x4), vmi::Color::Green));
-        this->push_back(Simplex(_size*(Vector3D_h((xv-e),5,0,1)), _size*(x2), _size*(x4), vmi::Color::Green));
+        this->push_back(Simplex(hole*e1+epsilon*e2, hole*e1+_size*e2,(hole+epsilon)*e1+epsilon*e2,  vmi::Color::Green));
+        this->push_back(Simplex(hole*e1+_size*e2, (hole+epsilon)*e1+_size*e2,(hole+epsilon)*e1+epsilon*e2,  vmi::Color::Green));
 
-        //right side of wall    
-        this->push_back(Simplex(_size*x3, _size*e1, _size*(e1+e2), vmi::Color::Green));
-        this->push_back(Simplex(_size*x3, _size*x4, _size*(e1+e2), vmi::Color::Green));
-
-        this->operator*(T);
-
-        Matrix_h T = Translation(0.0f,0.0f,-100.0f);
-
+        //right side of wall  
+        this->push_back(Simplex(2*_size*e1, (hole+epsilon)*e1,(hole+epsilon)*e1+_size*e2, vmi::Color::Green));
+        this->push_back(Simplex((hole+epsilon)*e1+_size*e2, 2*_size*e1, e1+_size*e2 + 2*_size*e1, vmi::Color::Green));  
+        walls.push_back(this);
+    }
+    void move(double dt, double velocity){
+        position.z  = position.z - velocity*dt;
     }
 
-    void CreateWalls(double dt) {
-
-        //int holeloc = rand() % 10;
-        
+    public:
+    static void moveAll(double dt, double velocity){
+        for(int it = 0; it < walls.size(); ++it){
+            walls.at(it)->move(dt,velocity);
+        }
+        if(walls.size() != 0){
+            if(walls.front()->position.z < Player::self->position.z){
+                delete walls.at(0);
+                walls.pop_front();
+            }
+        }
     }
+    //list of all objects
+    public:
+    static inline std::deque<Wall* > walls;
 
-    private:
-        float xv = 10;
-        float e = 2.5;
-
-    #undef x1
-    #undef x2
-    #undef x3
-    #undef x4
-    #undef e1
-    #undef e2
 };
+
+
+
+
 
 class Game : public vmi::Game{
     private:
@@ -614,6 +602,7 @@ class Game : public vmi::Game{
         void update(double dt){
             dt = (float) dt;
             Player::move(dt, 20.0f, view);
+            Wall::moveAll(dt,50);
             Complex::renderAll(view);
         }
             // Game loop
