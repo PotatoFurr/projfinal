@@ -8,6 +8,7 @@
 #include <PolygonShape.hpp>
 #include <Vector2d.hpp>
 #include <Game.hpp>
+#include <Timer.hpp>
 
 #define near 1
 #define far 100
@@ -507,6 +508,7 @@ class Floor: public Complex{
 
 class Wall: public Complex{
 
+    
     #define x1 Vector3D_h((xv-e),0,0,1)
     #define x2 Vector3D_h((xv-e),10,0,1)
     #define x3 Vector3D_h((xv+e),0,0,1)
@@ -515,12 +517,9 @@ class Wall: public Complex{
     #define e2 Vector3D_h(0,10,0,1)
 
     public:
-    Wall(float _size, float xv, double dt){
+    Wall(float _size, float xv){
         
         //left side of wall
-
-        Matrix_h T = Translation(0.0f,0.0f,-100.0f);
-
         this->push_back(Simplex(O, _size*x1, _size*(x2), vmi::Color::Green));
         this->push_back(Simplex(O, _size*e2, _size*(x2), vmi::Color::Green));
 
@@ -532,22 +531,39 @@ class Wall: public Complex{
         this->push_back(Simplex(_size*x3, _size*e1, _size*(e1+e2), vmi::Color::Green));
         this->push_back(Simplex(_size*x3, _size*x4, _size*(e1+e2), vmi::Color::Green));
 
+        Matrix_h T = Translation(0.0f,0.0f,100.0f);
         this->operator*(T);
-
-        Matrix_h T = Translation(0.0f,0.0f,-100.0f);
         //dont worry about above ^ need to change to align wall to back of center
         
         //then add movement towards screen/deletion
     }
 
-    void CreateWalls(double dt) {
+    void CreateWalls() {
+    
+        float location = (rand() % 10) + 5;
 
-        //int holeloc = rand() % 10;
+        new Wall(1, location);
+
+        int delTime = (rand() % 2) + 1;
         
+        vmi::Timer::createTimer(delTime, []() { Wall::CreateWalls(); }); //fix
+
+    }
+
+    void handleCollision() {
+
+
+        //when wall pos = (x,y,-20) [behind player], delete self
+    }
+
+    void move(double dt){
+
+        Matrix_h T = Translation(0.0f, 0.0f, dt*5);
+        this->operator*(T);
+
     }
 
     private:
-        float xv = 10;
         float e = 2.5;
 
     #undef x1
