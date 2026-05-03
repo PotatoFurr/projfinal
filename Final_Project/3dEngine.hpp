@@ -8,12 +8,15 @@
 #include <PolygonShape.hpp>
 #include <Vector2d.hpp>
 #include <Game.hpp>
+#include <Text.hpp>
 
 #define near 1
 #define far 100
 #define _Y_MIN -50.0f
 #define _Z_MAX 150.0f
 #define _Z_MIN 50.0f
+#define _WALL_START 500.0f
+#define _PLAYER_SIZE 20.0f
 
 namespace engine{
 class Vector3D_h{
@@ -408,7 +411,6 @@ class Complex{
     public:
     static void renderAll(View* view){
         for(int complex = 0; complex < objects.size(); ++complex){
-            
             objects.at(complex)->render(view);
         }
     }
@@ -478,13 +480,17 @@ class Player: public Cube{
     const static vmi::Key F = vmi::Key::W;
     const static vmi::Key B = vmi::Key::S;
     static Player* const self;
+    int score = 0;
+    vmi::Text scoreText = vmi::Text("Score: 0", {0,0});
+
 
     public:
-    Player(Vector3D_h init_position) : Cube(20){
+    Player(Vector3D_h init_position) : Cube(_PLAYER_SIZE){
         position = init_position;
     }
-    Player(float x, float y, float z) : Cube(20){
+    Player(float x, float y, float z) : Cube(_PLAYER_SIZE){
         position = {x,y,z,1.0f};
+
     }
 
     static void move(float dt, float speed, View* view){
@@ -541,46 +547,70 @@ class Player: public Cube{
        self->position = self->position + Vector3D_h(0.0f,Vy*dt,0.0f,0.0f);
         
     }
+    static void incScore(){
+        ++(self->score);
+        self->scoreText = vmi::Text("Score: " + std::to_string(self->score), {100,100});
+
+    }
 };
 
 
 class Wall: public Complex{
     public:
+    float hole;
+    float holeSize;
     /// @brief 
     /// @param _size the size of the wall
     /// @param hole the x position of the hole
     /// @param epsilon the width of the hole
-    Wall(float _size, float hole, float epsilon){
-        position = Vector3D_h(-100.0f,_Y_MIN,500.0f,1.0f);
+    Wall(float _hole, float epsilon, float _size = 100.0f){
+        position = Vector3D_h(-100.0f,_Y_MIN,_WALL_START,1.0f);
         //left side of wall
 
-        this->push_back(Simplex(O, hole*e1, _size*e2, vmi::Color::Green));
-        this->push_back(Simplex(_size*e2, hole*e1, _size*e2 + hole*e1, vmi::Color::Green));
+        this->push_back(Simplex(O, _hole*e1, _size*e2, vmi::Color::Green));
+        this->push_back(Simplex(_size*e2, _hole*e1, _size*e2 + _hole*e1, vmi::Color::Green));
 
         //wall above hole
-        this->push_back(Simplex(hole*e1+epsilon*e2, hole*e1+_size*e2,(hole+epsilon)*e1+epsilon*e2,  vmi::Color::Green));
-        this->push_back(Simplex(hole*e1+_size*e2, (hole+epsilon)*e1+_size*e2,(hole+epsilon)*e1+epsilon*e2,  vmi::Color::Green));
+        this->push_back(Simplex(_hole*e1+epsilon*e2, _hole*e1+_size*e2,(_hole+epsilon)*e1+epsilon*e2,  vmi::Color::Green));
+        this->push_back(Simplex(_hole*e1+_size*e2, (_hole+epsilon)*e1+_size*e2,(_hole+epsilon)*e1+epsilon*e2,  vmi::Color::Green));
 
         //right side of wall  
-        this->push_back(Simplex(2*_size*e1, (hole+epsilon)*e1,(hole+epsilon)*e1+_size*e2, vmi::Color::Green));
-        this->push_back(Simplex((hole+epsilon)*e1+_size*e2, 2*_size*e1, e1+_size*e2 + 2*_size*e1, vmi::Color::Green));  
-        walls.push_back(this);
+        this->push_back(Simplex(2*_size*e1, (_hole+epsilon)*e1,(_hole+epsilon)*e1+_size*e2, vmi::Color::Green));
+        this->push_back(Simplex((_hole+epsilon)*e1+_size*e2, 2*_size*e1, e1+_size*e2 + 2*_size*e1, vmi::Color::Green));  
+        hole = _hole;
+        holeSize = epsilon;
     }
     void move(double dt, double velocity){
         position.z  = position.z - velocity*dt;
     }
+    static void spawn(float _size = 100.0f){
+        float hole = ((std::rand()%1000)/1000.0f)*_size;
+        walls.push_back(new Wall(hole, 30));
+    }
+    static bool inHole(){
+        Wall* wall = walls.front();
+        Vector3D_h pos = Player::self->position;
+        bool inHoleX = (wall->hole -100.0f <= pos.x) && (pos.x + _PLAYER_SIZE <= wall->hole + wall->holeSize -100.0f );
+        bool inHoleY = (pos.y + _PLAYER_SIZE <= _Y_MIN + wall->holeSize);
+        return (inHoleX && inHoleY );
+    }
 
     public:
-    static void moveAll(double dt, double velocity){
+    static void moveWalls(double dt, double velocity){
         for(int it = 0; it < walls.size(); ++it){
             walls.at(it)->move(dt,velocity);
         }
-        if(walls.size() != 0){
-            if(walls.front()->position.z < Player::self->position.z){
-                delete walls.at(0);
-                walls.pop_front();
+        if(walls.front()->position.z < Player::self->position.z){
+                for(int i=0; i<objects.size(); ++i){
+                    if(objects.at(i) == walls.front()){
+                        objects.erase(objects.begin() + i);
+                        delete walls.front();
+                        walls.pop_front();
+                        spawn();
+                    }
+                }
             }
-        }
+    
     }
     //list of all objects
     public:
@@ -596,16 +626,37 @@ class Game : public vmi::Game{
     private:
     View* view; 
     public:
-        Game(int _width, int _height, View* _view) : vmi::Game("3D Game", _width, _height), view(_view){
-            //Intetionly left blank
+    Game(int _width, int _height, View* _view) : vmi::Game("3D Game", _width, _height), view(_view){
+        //Intetionly left blank
+    }
+    static void moveWalls(double dt, double velocity){
+        for(int it = 0; it < Wall::walls.size(); ++it){
+            Wall::walls.at(it)->move(dt,velocity);
         }
-        void update(double dt){
-            dt = (float) dt;
-            Player::move(dt, 20.0f, view);
-            Wall::moveAll(dt,50);
-            Complex::renderAll(view);
-        }
-            // Game loop
+        if(Wall::walls.front()->position.z < Player::self->position.z){
+            if(!Wall::inHole()){
+            abort();  
+            }
+            Player::incScore(); 
+                for(int i=0; i<Wall::objects.size(); ++i){
+                    if(Complex::objects.at(i) == Wall::walls.front()){
+                        Complex::objects.erase(Complex::objects.begin() + i);
+                        delete Wall::walls.front();
+                        Wall::walls.pop_front();
+                        Wall::spawn();
+                    }
+                }
+    
+            }
+    
+    }
+    void update(double dt){
+        dt = (float) dt;
+        Player::move(dt, 20.0f, view);
+        moveWalls(dt,50);
+        Complex::renderAll(view);
+    }
+    // Game loop
     inline void playGame()
     {
         sf::Clock clock; // clock for measuring frame time
