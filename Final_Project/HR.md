@@ -1,5 +1,6 @@
 HR:
 GeeksForGeeks was used to help understand how to use polymorphisim, std::optional.
+StackOverflow was used to undersatnd wht I was getting buss errrors and segemntation faluts. it was also used to undersatnd git and the std libray functions and templates
 
 Claude:
 

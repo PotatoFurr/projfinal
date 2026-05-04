@@ -634,19 +634,23 @@ class Wall: public Complex{
 class Game : public vmi::Game{
     private:
     View* view; 
+    float vel = 20;
     public:
     Game(int _width, int _height, View* _view) : vmi::Game("3D Game", _width, _height), view(_view){
         //Intetionly left blank
     }
-    static void moveWalls(double dt, double velocity){
+    static void moveWalls(double dt, float& velocity){
         for(int it = 0; it < Wall::walls.size(); ++it){
             Wall::walls.at(it)->move(dt,velocity);
         }
         if(Wall::walls.front()->position.z < Player::self->position.z){
             if(!Wall::inHole()){
-            abort();  
+                std::cout << "YOU LOSE!" << std::endl << "Score: " << std::to_string(Player::self->score);
+                exit(0);  
             }
+            velocity += 10;
             Player::incScore(); 
+
                 for(int i=0; i<Wall::objects.size(); ++i){
                     if(Complex::objects.at(i) == Wall::walls.front()){
                         Complex::objects.erase(Complex::objects.begin() + i);
@@ -662,7 +666,7 @@ class Game : public vmi::Game{
     void update(double dt){
         dt = (float) dt;
         Player::move(dt, 20.0f, view);
-        moveWalls(dt,50);
+        moveWalls(dt,vel);
         Complex::renderAll(view);
     }
     // Game loop
