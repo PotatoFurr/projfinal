@@ -481,7 +481,7 @@ class Player: public Cube{
     const static vmi::Key B = vmi::Key::S;
     static Player* const self;
     int score = 0;
-    vmi::Text scoreText = vmi::Text("Score: 0", {0,0});
+    vmi::Text scoreText;
 
 
     public:
@@ -491,6 +491,10 @@ class Player: public Cube{
     Player(float x, float y, float z) : Cube(_PLAYER_SIZE){
         position = {x,y,z,1.0f};
 
+        scoreText.setText("0");
+       scoreText.setPosition(vmi::Vector2d(400,200));
+       scoreText.setFill(vmi::Color::White);
+        
     }
 
     static void move(float dt, float speed, View* view){
@@ -548,8 +552,11 @@ class Player: public Cube{
         
     }
     static void incScore(){
-        ++(self->score);
-        self->scoreText = vmi::Text("Score: " + std::to_string(self->score), {100,100});
+        score++;
+ 
+       std::stringstream ss;
+       ss << score;
+       scoreText.setText(ss.str());
 
     }
 };
