@@ -9,6 +9,7 @@
 #include <Vector2d.hpp>
 #include <Game.hpp>
 #include <Text.hpp>
+#include <sstream>
 
 #define near 1
 #define far 100
@@ -552,11 +553,12 @@ class Player: public Cube{
         
     }
     static void incScore(){
-        score++;
+        ++self->score;
  
        std::stringstream ss;
-       ss << score;
-       scoreText.setText(ss.str());
+       ss << "Score: ";
+       ss << self->score;
+       self->scoreText.setText(ss.str());
 
     }
 };
